@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2026.11.24-r7" />
+  <meta name="app-build" content="2026.11.24-r9" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -744,6 +744,20 @@
       align-items: center;
       justify-content: space-between;
     }
+    body:not(.on-home-tab) #btnHeaderGoHome {
+      padding: 0.15rem 0.65rem 0.15rem 0.2rem;
+      gap: 0.375rem;
+    }
+    body:not(.on-home-tab) #btnHeaderGoHome > span:first-child {
+      width: 1.35rem;
+      height: 1.35rem;
+      font-size: 0.625rem;
+    }
+    body:not(.on-home-tab) #btnHeaderGoHome h1 {
+      font-size: 0.72rem;
+      font-weight: 600;
+      opacity: 0.92;
+    }
     body:not(.on-home-tab) #headerPeriodRow {
       display: flex !important;
       justify-content: center !important;
@@ -754,10 +768,54 @@
     body:not(.on-home-tab) #headerPeriodRow > div:first-child {
       margin-left: auto;
       margin-right: auto;
-      padding: 0.2rem 0.65rem;
+      padding: 0.3rem 0.85rem;
+      background-color: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+    body:not(.on-home-tab) #globalMonthSelect,
+    body:not(.on-home-tab) #globalYearSelect {
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding-top: 0.1rem;
+      padding-bottom: 0.1rem;
+    }
+    body:not(.on-home-tab) #btnResetActivePeriod {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
     }
     body:not(.on-home-tab) #headerPeriodRow > div:last-child {
       display: none !important;
+    }
+    /* Vista 100% móvil en cualquier pantalla (celular, PC o visor Canvas) */
+    #desktopNavBar {
+      display: none !important;
+    }
+    #homeQuickAccessGrid {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+    body:not(.on-home-tab) #mobileNavBar {
+      display: flex !important;
+    }
+    body:not(.on-home-tab) {
+      padding-bottom: 5.5rem !important;
+    }
+    @media (min-width: 481px) {
+      html {
+        background-color: #E2E8F0;
+      }
+      body {
+        max-width: 430px;
+        margin-left: auto;
+        margin-right: auto;
+        min-height: 100vh;
+        box-shadow: 0 0 40px rgba(15, 23, 42, 0.14);
+        position: relative;
+      }
+      #mobileNavBar {
+        max-width: 430px;
+        margin-left: auto;
+        margin-right: auto;
+      }
     }
     #topSummaryRibbonSection {
       display: none !important;
@@ -14970,6 +15028,24 @@
           }).catch(function() {});
         }
       }
+
+      // Aviso discreto si la app acaba de abrir en una versión nueva tras actualización en frío
+      (function notifyIfUpdatedBuild() {
+        try {
+          const metaEl = document.querySelector('meta[name="app-build"]');
+          const curBuild = metaEl ? String(metaEl.getAttribute('content') || '').trim() : '';
+          if (!curBuild) return;
+          const prevBuild = localStorage.getItem('ff_last_seen_app_build');
+          localStorage.setItem('ff_last_seen_app_build', curBuild);
+          if (prevBuild && prevBuild !== curBuild) {
+            setTimeout(function() {
+              if (typeof showToast === 'function') {
+                showToast('App actualizada a la versión ' + curBuild, '✨');
+              }
+            }, 900);
+          }
+        } catch (_e) {}
+      })();
 
       // Verificador de actualizaciones desde GitHub Pages con cuadro de confirmación (salta caché de 10 min y WebView)
       if (isHostedHttps) {
