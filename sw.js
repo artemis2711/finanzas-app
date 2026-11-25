@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finanzas-movil-ghpages-v4';
+const CACHE_NAME = 'finanzas-movil-ghpages-v5';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -16,13 +16,23 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Cache-first para apertura instantánea en la versión actual (permite mostrar siempre el diálogo de nueva versión + notas).
-// Cuando el usuario presiona "Actualizar" (?v=...), descarga desde la red sin caché y guarda la nueva versión en caché.
+// Cache-first seguro: SOLO intercepta peticiones del mismo origen (nunca fuentes externas/CDNs)
+// y SOLO guarda en './index.html' respuestas con Content-Type text/html.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const reqUrl = event.request.url;
-  const isCheck = reqUrl.includes('?t=') || reqUrl.includes('&t=');
-  const isApplyUpdate = reqUrl.includes('?v=') || reqUrl.includes('&v=');
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(reqUrl);
+  } catch (_e) {
+    return;
+  }
+
+  // Nunca interceptar ni cachear recursos de otros dominios (Google Fonts, CDNs, Apps Script, etc.)
+  if (parsedUrl.origin !== self.location.origin) return;
+
+  const isCheck = parsedUrl.searchParams.has('t');
+  const isApplyUpdate = parsedUrl.searchParams.has('v');
   const isNav = event.request.mode === 'navigate' || (event.request.headers.get('accept') || '').includes('text/html');
 
   // 1. Consulta silenciosa de versión (?t=...): siempre red sin tocar caché
@@ -31,11 +41,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Usuario confirmó "Actualizar" (?v=...): bajar versión nueva y guardarla como ./index.html en caché
-  if (isApplyUpdate) {
+  // 2. Usuario confirmó "Actualizar" (?v=...) en navegación HTML: bajar versión nueva y cachear SOLO si es text/html
+  if (isApplyUpdate && isNav) {
     event.respondWith(
       fetch(reqUrl, { cache: 'no-store' }).then((resp) => {
-        if (resp && resp.status === 200) {
+        const ct = (resp && resp.headers && resp.headers.get('content-type')) || '';
+        if (resp && resp.status === 200 && ct.includes('text/html')) {
           const clone = resp.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', clone));
         }
@@ -45,13 +56,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Apertura normal de la app: servir versión cacheada al instante (y si no hay caché aún, bajar de red y cachear)
+  // 3. Apertura normal de la app (navegación HTML): servir versión cacheada al instante (verificando que sea text/html)
   if (isNav) {
     event.respondWith(
       caches.match('./index.html').then((cached) => {
-        if (cached) return cached;
+        const cachedCt = (cached && cached.headers && cached.headers.get('content-type')) || '';
+        if (cached && cachedCt.includes('text/html')) return cached;
         return fetch(reqUrl, { cache: 'no-cache' }).then((resp) => {
-          if (resp && resp.status === 200) {
+          const ct = (resp && resp.headers && resp.headers.get('content-type')) || '';
+          if (resp && resp.status === 200 && ct.includes('text/html')) {
             const clone = resp.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', clone));
           }
@@ -62,11 +75,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Otros recursos estáticos (íconos, manifest): cache-first con fallback a red
+  // 4. Otros recursos estáticos del mismo origen (íconos, manifest): cache-first con fallback a red
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((resp) => {
-        if (resp && resp.status === 200 && (resp.type === 'basic' || resp.type === 'cors')) {
+        if (resp && resp.status === 200 && resp.type === 'basic') {
           const clone = resp.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
