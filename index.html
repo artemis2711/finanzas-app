@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="1.9.1" />
+  <meta name="app-build" content="1.9.3" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -809,6 +809,51 @@
       body:not(.force-mobile-view) #homeQuickAccessSection { display: none !important; }
       body:not(.force-mobile-view) #homePcDashboardGrid { display: block !important; }
       body:not(.force-mobile-view) #homeLastMovSection { display: none !important; }
+      /* Inicio en modo PC: ancho amplio + Balance Mensual y Mis Ahorros lado a lado para ver todo sin scroll */
+      body:not(.force-mobile-view).on-home-tab main {
+        max-width: 1380px !important;
+        padding-top: 0.85rem !important;
+        padding-bottom: 0.85rem !important;
+      }
+      body:not(.force-mobile-view) #tab-inicio:not(.hidden) {
+        display: grid !important;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0.85rem !important;
+        align-items: stretch;
+      }
+      body:not(.force-mobile-view) #tab-inicio > * {
+        margin-top: 0 !important;
+      }
+      body:not(.force-mobile-view) #homeBalanceCard {
+        grid-column: span 8 / span 8;
+        border-radius: 1.25rem;
+      }
+      body:not(.force-mobile-view) #homeBalanceCard > div:first-child {
+        padding: 1rem 1.25rem !important;
+        gap: 0.6rem !important;
+      }
+      body:not(.force-mobile-view) #homeSavingsSection {
+        grid-column: span 4 / span 4;
+        display: flex;
+        flex-direction: column;
+      }
+      body:not(.force-mobile-view) #homeSavingsSection > button {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-radius: 1.25rem;
+      }
+      body:not(.force-mobile-view) #homePcDashboardGrid {
+        grid-column: span 12 / span 12;
+      }
+      body:not(.force-mobile-view) #homePcCashflowStrip > div {
+        padding: 0.65rem 0.9rem !important;
+      }
+      body:not(.force-mobile-view) #homePcCashflowStrip .text-lg {
+        font-size: 1rem !important;
+        line-height: 1.35rem !important;
+      }
       body:not(.force-mobile-view):not(.on-home-tab):not(.on-config-tab) #topSummaryRibbonSection {
         display: block !important;
       }
@@ -1082,7 +1127,7 @@
     <!-- =================================================================== -->
     <section id="tab-inicio" class="tab-panel space-y-5">
       <!-- Tarjeta Principal de Balance estilo Banco de Chile -->
-      <div class="bg-white rounded-3xl shadow-md border border-slate-200/80 overflow-hidden">
+      <div id="homeBalanceCard" class="bg-white rounded-3xl shadow-md border border-slate-200/80 overflow-hidden">
         <div class="p-4 sm:p-5 space-y-4">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -1190,55 +1235,54 @@
         <div id="homeQuickAccessGrid" class="grid grid-cols-4 sm:grid-cols-5 gap-2.5"></div>
       </div>
 
-      <!-- PANEL EJECUTIVO DE INICIO (EXCLUSIVO MODO PC) -->
-      <div id="homePcDashboardGrid" class="hidden space-y-5">
+      <!-- PANEL EJECUTIVO DE INICIO (EXCLUSIVO MODO PC, TODO VISIBLE SIN SCROLL) -->
+      <div id="homePcDashboardGrid" class="hidden space-y-3">
         <!-- Franja rápida de Flujo de Caja del Mes -->
         <div id="homePcCashflowStrip" class="grid grid-cols-4 gap-3"></div>
 
-        <!-- Grilla principal 2 columnas (7 / 5) -->
-        <div class="grid grid-cols-12 gap-5 items-start">
-          <!-- Columna izquierda: Tarjetas ciclo activo + Últimos 6 movimientos -->
-          <div class="col-span-7 space-y-5">
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+        <!-- Grilla compacta de 3 columnas (5 / 4 / 3) para ver todo en una sola pantalla -->
+        <div class="grid grid-cols-12 gap-3.5 items-stretch">
+          <!-- Columna 1 (5 cols): Últimos 5 Movimientos -->
+          <div class="col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 space-y-2 flex flex-col">
+            <div class="flex items-center justify-between">
+              <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>🧾</span> <span>Últimos Movimientos</span></h2>
+              <button type="button" data-home-go="tab-historial" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver historial ›</button>
+            </div>
+            <div id="homePcRecentMovs" class="divide-y divide-slate-100 flex-1"></div>
+          </div>
+
+          <!-- Columna 2 (4 cols): Tarjetas Ciclo Activo + Gastos Personales -->
+          <div class="col-span-4 space-y-3 flex flex-col">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 space-y-2">
               <div class="flex items-center justify-between">
-                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>💳</span> <span>Tarjetas de Crédito — Ciclo Activo</span></h2>
-                <button type="button" data-home-go="tab-tarjetas" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver tarjetas ›</button>
+                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>💳</span> <span>Tarjetas — Ciclo Activo</span></h2>
+                <button type="button" data-home-go="tab-tarjetas" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver ›</button>
               </div>
-              <div id="homePcCardsList" class="grid grid-cols-2 gap-3"></div>
+              <div id="homePcCardsList" class="grid grid-cols-2 gap-2"></div>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-3.5 space-y-2 flex-1">
               <div class="flex items-center justify-between">
-                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>🧾</span> <span>Últimos Movimientos</span></h2>
-                <button type="button" data-home-go="tab-historial" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver historial ›</button>
+                <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>🤝</span> <span>Gastos Personales</span></h2>
+                <button type="button" data-home-go="tab-deudas" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver ›</button>
               </div>
-              <div id="homePcRecentMovs" class="divide-y divide-slate-100"></div>
+              <div id="homePcPersonalStatus" class="space-y-1.5"></div>
             </div>
           </div>
 
-          <!-- Columna derecha: Top Categorías + Estado de Gastos Personales -->
-          <div class="col-span-5 space-y-5">
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
-              <div class="flex items-center justify-between">
-                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>📊</span> <span>Top Categorías del Mes</span></h2>
-                <button type="button" data-home-go="tab-presupuesto" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver resumen ›</button>
-              </div>
-              <div id="homePcTopCats" class="space-y-2.5"></div>
+          <!-- Columna 3 (3 cols): Top Categorías del Mes -->
+          <div class="col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 space-y-2.5 flex flex-col">
+            <div class="flex items-center justify-between">
+              <h2 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>📊</span> <span>Top Categorías</span></h2>
+              <button type="button" data-home-go="tab-presupuesto" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver ›</button>
             </div>
-
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
-              <div class="flex items-center justify-between">
-                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>🤝</span> <span>Gastos Personales del Mes</span></h2>
-                <button type="button" data-home-go="tab-deudas" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver detalle ›</button>
-              </div>
-              <div id="homePcPersonalStatus" class="space-y-2"></div>
-            </div>
+            <div id="homePcTopCats" class="space-y-2.5 flex-1"></div>
           </div>
         </div>
       </div>
 
       <!-- MIS AHORROS (Resumen compacto de lo más relevante) -->
-      <div class="space-y-2.5">
+      <div id="homeSavingsSection" class="space-y-2.5">
         <div class="flex items-center justify-between px-1">
           <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Mis Ahorros</h2>
           <button type="button" data-home-go="tab-ahorros" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558] flex items-center gap-0.5">
@@ -7825,7 +7869,7 @@
             '<div class="text-[11px] text-sky-800">Transferido a reservas</div>' +
           '</div>' +
           '<div class="p-3.5 rounded-xl bg-teal-50 border-2 border-teal-500 shadow-sm">' +
-            '<div class="text-[10px] font-extrabold text-teal-950 uppercase">💵 Excedente (' + curM.slice(0, 7) + ')</div>' +
+            '<div class="text-[10px] font-extrabold text-teal-950 uppercase">💵 Saldo Neto (' + curM.slice(0, 7) + ')</div>' +
             '<div class="text-base md:text-lg font-extrabold ' + (curCashFlow.excedenteCajaSinApartar >= 0 ? 'text-teal-900' : 'text-rose-600') + ' mt-0.5">' + formatCLP(curCashFlow.excedenteCajaSinApartar) + '</div>' +
             '<div class="text-[11px] text-teal-800">Ingresos − Egresos − Ahorro</div>' +
           '</div>';
@@ -7846,6 +7890,11 @@
           cf: computeCashFlowForMonthBucket(mk, mb)
         });
       }
+      let runningSaldoAcum = 0;
+      allCfCols.forEach(function(col) {
+        runningSaldoAcum += Number((col.cf && col.cf.excedenteCajaSinApartar) || 0);
+        col.cf.saldoAcumulado = runningSaldoAcum;
+      });
       const cfCols = (typeof getVisibleMatrixColumns === 'function')
         ? getVisibleMatrixColumns(allCfCols, curM)
         : allCfCols;
@@ -7899,7 +7948,8 @@
         ].concat(distChildRows).concat([
           { title: '🛍️ (-) Compras Personales', field: 'egComprasPersonales', invert: true, bold: false, parentGroup: 'cf_egr' },
           { title: '🏦 Ahorro Transferido a Bolsillos', field: 'ahorroEnBolsillos', bold: true, bg: 'bg-sky-50/70 row-bg-sky-50' },
-          { title: '💵 Excedente', field: 'excedenteCajaSinApartar', bold: true, bg: 'bg-teal-100/80 row-bg-teal-100' }
+          { title: '💵 Saldo Neto', field: 'excedenteCajaSinApartar', bold: true, bg: 'bg-teal-100/80 row-bg-teal-100' },
+          { title: '📈 Saldo Acumulado', field: 'saldoAcumulado', bold: true, bg: 'bg-indigo-50/90' }
         ]);
 
         cfBodyEl.innerHTML = cfRowsDef.filter(function(r) {
@@ -17426,7 +17476,7 @@
           '<div class="text-lg font-extrabold text-sky-800 mt-0.5">' + fmtVal(cf.ahorroEnBolsillos || 0) + '</div>' +
         '</div>' +
         '<div class="bg-white rounded-2xl border border-teal-300 p-3.5 shadow-xs">' +
-          '<div class="text-[10px] font-bold uppercase text-teal-900">💵 Excedente Caja</div>' +
+          '<div class="text-[10px] font-bold uppercase text-teal-900">💵 Saldo Neto</div>' +
           '<div class="text-lg font-extrabold ' + ((cf.excedenteCajaSinApartar || 0) >= 0 ? 'text-teal-800' : 'text-rose-600') + ' mt-0.5">' + fmtVal(cf.excedenteCajaSinApartar || 0) + '</div>' +
         '</div>';
 
@@ -17483,7 +17533,7 @@
         const ub = Number(b2.updated_at_ms || 0);
         if (ua !== ub) return ub - ua;
         return (typeof compareByIngresoDesc === 'function') ? compareByIngresoDesc(a, b2) : 0;
-      }).slice(0, 6);
+      }).slice(0, 5);
 
       if (!recent6.length) {
         recentHost.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">Sin movimientos registrados aún.</div>';
@@ -17496,7 +17546,7 @@
           const badge = isSav ? '🏦' : (isInc ? '↙' : '↗');
           const badgeCls = isSav ? 'bg-blue-100 text-blue-700' : (isInc ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600');
           const fStr = String(m.fecha_compra || '').slice(0, 10);
-          return '<div class="py-2 flex items-center justify-between gap-3 text-xs">' +
+          return '<div class="py-1.5 flex items-center justify-between gap-2.5 text-xs">' +
             '<div class="flex items-center gap-2.5 min-w-0">' +
               '<span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ' + badgeCls + '">' + badge + '</span>' +
               '<div class="min-w-0">' +
@@ -17548,7 +17598,7 @@
             : (pend > 0
               ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Pend: ' + fmtVal(pend) + '</span>'
               : '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">✓ Saldado</span>');
-          return '<div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2">' +
+          return '<div class="px-2.5 py-2 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2">' +
             '<div class="min-w-0">' +
               '<div class="text-xs font-extrabold text-slate-900 truncate">' + escapeHtml(p.nombre) + '</div>' +
               '<div class="text-[10px] text-slate-500">Gasto: ' + fmtVal(pb.gasto || 0) + (reqDev ? (' • Dev: ' + fmtVal(pb.dev || 0)) : '') + '</div>' +
