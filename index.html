@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="1.6.2" />
-  <meta name="app-notes" content="Mejoras en la experiencia del usuario y orden de secciones desplegables en Análisis." />
+  <meta name="app-build" content="1.8.2" />
+  <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -787,36 +787,112 @@
     body:not(.on-home-tab) #headerPeriodRow > div:last-child {
       display: none !important;
     }
-    /* Vista 100% móvil en cualquier pantalla (celular, PC o visor Canvas) */
-    #desktopNavBar {
-      display: none !important;
+    /* === SISTEMA DUAL DE VISTAS: ORDENADOR (PC) vs MÓVIL / APK === */
+    /* En celular real (<768px) o cuando el usuario activa vista móvil en PC (body.force-mobile-view) */
+    @media (max-width: 767px) {
+      #desktopNavBar { display: none !important; }
+      #homeQuickAccessGrid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+      body:not(.on-home-tab) #mobileNavBar { display: flex !important; }
+      body:not(.on-home-tab) { padding-bottom: 5.5rem !important; }
+      #btnTogglePcMobileView, #btnExitForceMobileFloat { display: none !important; }
     }
-    #homeQuickAccessGrid {
-      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    }
-    body:not(.on-home-tab) #mobileNavBar {
-      display: flex !important;
-    }
-    body:not(.on-home-tab) {
-      padding-bottom: 5.5rem !important;
-    }
-    @media (min-width: 481px) {
-      html {
+    @media (min-width: 768px) {
+      /* Modo PC (por defecto en pantallas >= 768px que no estén en modo móvil forzado) */
+      body:not(.force-mobile-view) #desktopNavBar { display: flex !important; }
+      body:not(.force-mobile-view) #mobileNavBar { display: none !important; }
+      body:not(.force-mobile-view) #homeQuickAccessGrid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+      body:not(.force-mobile-view) { padding-bottom: 1.5rem !important; }
+      body:not(.force-mobile-view) #btnTogglePcMobileView { display: inline-flex !important; }
+      body:not(.force-mobile-view) #btnExitForceMobileFloat { display: none !important; }
+      body:not(.force-mobile-view) .matrix-window-bar { display: none !important; }
+
+      /* Encabezado azul compacto en 1 sola fila en PC (Mes/Año centrado entre marca y acciones) */
+      body:not(.force-mobile-view):not(.on-home-tab) header > div:first-child {
+        position: relative;
+        padding-top: 0.55rem !important;
+        padding-bottom: 0.55rem !important;
+        gap: 0 !important;
+      }
+      body:not(.force-mobile-view):not(.on-home-tab) #headerPeriodRow {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: auto !important;
+        margin: 0 !important;
+        pointer-events: auto;
+        z-index: 5;
+      }
+      body:not(.force-mobile-view):not(.on-home-tab) #headerPeriodRow > div:first-child {
+        padding: 0.22rem 0.75rem;
+      }
+      body:not(.force-mobile-view):not(.on-home-tab) #globalMonthSelect,
+      body:not(.force-mobile-view):not(.on-home-tab) #globalYearSelect {
+        font-size: 0.85rem;
+      }
+
+      /* Tabla de Autoregistro ajustada al 100% del ancho disponible en PC (sin scroll horizontal) */
+      body:not(.force-mobile-view) #reviewTableTopScroll {
+        display: none !important;
+      }
+      body:not(.force-mobile-view) #reviewTableScrollWrapper {
+        overflow-x: hidden !important;
+      }
+      body:not(.force-mobile-view) #reviewTableEl {
+        min-width: 0 !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+        font-size: 11px !important;
+      }
+      body:not(.force-mobile-view) #reviewTableEl th,
+      body:not(.force-mobile-view) #reviewTableEl td {
+        padding: 0.45rem 0.35rem !important;
+        min-width: 0 !important;
+        white-space: normal !important;
+        word-break: break-word;
+      }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(1) { width: 5%; }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(2) { width: 13%; }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(3) { width: 11%; }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(4) { width: 22%; }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(5) { width: 8%; }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(6) { width: 11%; }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(7) { width: 8%; }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(8) { width: 12%; }
+      body:not(.force-mobile-view) #reviewTableEl th:nth-child(9) { width: 10%; }
+      body:not(.force-mobile-view) #reviewTableEl input[type="date"],
+      body:not(.force-mobile-view) #reviewTableEl input[type="text"],
+      body:not(.force-mobile-view) #reviewTableEl select {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
+        font-size: 11px !important;
+      }
+
+      /* Modo vista móvil forzada desde PC (botón rápido) */
+      html.force-mobile-html {
         background-color: #E2E8F0;
       }
-      body {
+      body.force-mobile-view {
         max-width: 430px;
         margin-left: auto;
         margin-right: auto;
         min-height: 100vh;
-        box-shadow: 0 0 40px rgba(15, 23, 42, 0.14);
+        box-shadow: 0 0 40px rgba(15, 23, 42, 0.16);
         position: relative;
       }
-      #mobileNavBar {
+      body.force-mobile-view #desktopNavBar { display: none !important; }
+      body.force-mobile-view #homeQuickAccessGrid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+      body.force-mobile-view:not(.on-home-tab) #mobileNavBar {
+        display: flex !important;
         max-width: 430px;
         margin-left: auto;
         margin-right: auto;
       }
+      body.force-mobile-view:not(.on-home-tab) { padding-bottom: 5.5rem !important; }
+      body.force-mobile-view #btnTogglePcMobileView { display: none !important; }
+      body.force-mobile-view #btnExitForceMobileFloat { display: inline-flex !important; }
     }
     #topSummaryRibbonSection {
       display: none !important;
@@ -867,6 +943,7 @@
         </div>
 
         <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button" id="btnTogglePcMobileView" title="Alternar entre vista Ordenador y vista Móvil" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 border border-white/25 text-white text-xs font-bold transition whitespace-nowrap"><span>📱</span> <span>Vista móvil</span></button>
           <button type="button" id="btnPrivacyEye" aria-label="Ocultar o mostrar montos" title="Ocultar o mostrar valores monetarios" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition flex items-center justify-center text-white">
             <svg id="iconPrivacyEyeOpen" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -1515,12 +1592,12 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 id="secPresupuestoTitle" class="text-base md:text-lg font-bold text-slate-900" data-ui-key="sec_presupuesto_title">Presupuesto Mensual 2026</h2>
-            <p class="text-xs text-slate-500">Se genera automáticamente para cada año que tenga movimientos registrados (toca un mes para activarlo en toda la app):</p>
+            
           </div>
           <div id="budgetYearPills" class="flex flex-wrap items-center gap-2"></div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
+        <div class="matrix-window-bar flex flex-wrap items-center justify-between gap-2 text-[11px] bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
           <span class="matrix-window-hint text-slate-600 font-medium">Últimos 3 meses · Desliza → y mantén para ver los demás meses</span>
           <button type="button" data-toggle-all-months class="px-2.5 py-1 rounded-lg bg-[#1B365D] text-white font-bold text-[11px] whitespace-nowrap">◀ Ver todos los meses</button>
         </div>
@@ -1582,13 +1659,13 @@
             <h3 class="text-sm md:text-base font-bold text-slate-900 flex items-center gap-2">
               <span>📈</span> <span>Tabla de Flujo de Caja — Desglose Final del Mes</span>
             </h3>
-            <p class="text-xs text-slate-500">Compara ingresos totales (sueldo, cashback, reembolsos y devoluciones recibidas) contra los egresos y ahorros del mes para obtener el <strong>Excedente</strong>:</p>
+            
           </div>
         </div>
 
         <div id="cashFlowActiveMonthCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
+        <div class="matrix-window-bar flex flex-wrap items-center justify-between gap-2 text-[11px] bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
           <span class="matrix-window-hint text-slate-600 font-medium">Últimos 3 meses · Desliza → y mantén para ver los demás meses</span>
           <button type="button" data-toggle-all-months class="px-2.5 py-1 rounded-lg bg-[#1B365D] text-white font-bold text-[11px] whitespace-nowrap">◀ Ver todos los meses</button>
         </div>
@@ -1614,7 +1691,7 @@
               <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
                 <span>🔬</span> <span id="anaMainTitle">Análisis Económico y Salud Financiera</span>
               </h2>
-              <p class="text-xs text-slate-500">Métricas clave de finanzas personales, patrones ocultos, estacionalidad y proyecciones interactivas.</p>
+              
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-bold">
@@ -1692,7 +1769,7 @@
                 <span id="anaPersonalChevron" class="text-xs text-amber-700 transition-transform">▶</span>
                 <span>🤝 Análisis de Gastos Personales</span>
               </h3>
-              <p class="text-xs text-slate-500 mt-0.5">Toca para desplegar el desglose exclusivo de gastos personales y devoluciones.</p>
+              
             </div>
             <span id="anaPersonalQuickTotal" class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-950 text-xs font-extrabold shrink-0">$0</span>
           </button>
@@ -1913,7 +1990,7 @@
             <h2 class="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
               <span>🏦</span> <span>Control de Ahorros y Fondos de Reserva</span>
             </h2>
-            <p class="text-xs text-slate-500">Crea tus categorías de ahorro, registra aportes o retiros y haz seguimiento al fondo acumulado:</p>
+            
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <label for="savMonthSelect" class="text-xs text-slate-500 font-medium">Mes y año activo:</label>
@@ -1975,7 +2052,7 @@
         <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
           <div class="border-b border-slate-100 pb-2.5">
             <h3 class="text-sm md:text-base font-bold text-slate-900">🏷️ Categorías de Ahorro y Registro Manual</h3>
-            <p class="text-xs text-slate-500">Crea tus propias categorías de ahorro y registra aportes o retiros:</p>
+            
           </div>
 
           <!-- Formulario para crear nueva Categoría de Ahorro -->
@@ -2058,7 +2135,7 @@
           <div class="border-b border-slate-100 pb-2.5 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 class="text-sm md:text-base font-bold text-slate-900">📊 Desglose por Categoría de Ahorro y Cuenta</h3>
-              <p class="text-xs text-slate-500">Toca cualquier categoría para ver los movimientos que la componen:</p>
+              
             </div>
           </div>
           <div id="savingsPocketsContainer" class="space-y-2.5"></div>
@@ -2074,7 +2151,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
           <div>
             <h3 id="savYearlyTableTitle" class="text-sm md:text-base font-bold text-slate-900">📅 Resumen Mensual de Ahorros en Bolsillos (2026)</h3>
-            <p class="text-xs text-slate-500">Toca cualquier mes para activarlo en toda la app:</p>
+            
           </div>
           <button type="button" id="btnToggleSavAllMonths" class="px-2.5 py-1 rounded-lg bg-[#1B365D] text-white text-[11px] font-bold whitespace-nowrap">◀ Ver 12 meses</button>
         </div>
@@ -2104,7 +2181,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
           <div>
             <h3 class="text-sm md:text-base font-bold text-slate-900">🗂️ Movimientos de Ahorro Registrados</h3>
-            <p class="text-xs text-slate-500">Filtra por mes/año o busca cualquier movimiento para editarlo o eliminarlo:</p>
+            
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <select id="savHistScopeFilter" class="rounded-xl border border-slate-300 px-3 py-1.5 text-xs bg-white font-semibold text-slate-800">
@@ -2308,7 +2385,7 @@
     <!-- =================================================================== -->
     <section id="tab-config" class="tab-panel hidden space-y-6">
       <!-- Barra Superior de Guardado Instantáneo y Manual en Configuración -->
-      <div class="bg-slate-900 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+      <div class="hidden bg-slate-900 text-white rounded-2xl p-4 flex-wrap items-center justify-between gap-3 shadow-sm">
         <div class="flex items-center gap-2.5">
           <span class="text-lg">⚡</span>
           <div>
@@ -2381,9 +2458,7 @@
           <p class="pa-oculto" role="status" aria-live="polite" data-vivo></p>
         </div>
       </div>
-      <div id="grid-tab-config" class="subsec-grid-container space-y-6 lg:space-y-0">
-      <!-- Fila 1: Presupuesto Mensual o Anual (Gastos Fijos y Supermercado) -->
-      <div id="subsec-cfg-sync" data-subsec-item class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
+      <div id="subsec-cfg-sync" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 class="text-base font-bold text-slate-900">☁️ Sincronización Multi-Dispositivo (Apps Script)</h2>
@@ -2433,6 +2508,9 @@
         </div>
       </div>
 
+      
+      <div id="grid-tab-config" class="subsec-grid-container space-y-6 lg:space-y-0">
+      <!-- Fila 1: Presupuesto Mensual o Anual (Gastos Fijos y Supermercado) -->
       <div id="subsec-cfg-budget" data-subsec-item class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -3340,7 +3418,7 @@
       { id: 'subsec-hist-batch', tabId: 'tab-historial', label: 'Barra de Selección Múltiple y Eliminación en Lote', enabled: true, x: 0, y: 2, w: 12, h: 2, tipo: 'alertas', etiqueta: 'Acciones en lote', min: [4, 2] },
       { id: 'subsec-hist-table', tabId: 'tab-historial', label: 'Tabla Completa de Movimientos', enabled: true, x: 0, y: 4, w: 12, h: 5, tipo: 'lista', etiqueta: 'Registros', min: [4, 2] },
       // Subsecciones de Configuración (4 avanzadas ocultas fuera de parrilla por defecto)
-      { id: 'subsec-cfg-sync', tabId: 'tab-config', label: 'Sincronización Multi-Dispositivo (Apps Script)', enabled: true, x: 0, y: 0, w: 12, h: 4, tipo: 'lista', etiqueta: 'Apps Script', min: [4, 2] },
+      
       { id: 'subsec-cfg-cards', tabId: 'tab-config', label: 'Tarjetas y Fechas de Facturación', enabled: true, x: 0, y: 0, w: 6, h: 4, tipo: 'barras', etiqueta: 'Tarjetas', min: [4, 2] },
       { id: 'subsec-cfg-cats', tabId: 'tab-config', label: 'Categorías de Gasto y Presupuesto', enabled: true, x: 6, y: 0, w: 6, h: 4, tipo: 'barras', etiqueta: 'Categorías', min: [4, 2] },
       { id: 'subsec-cfg-people', tabId: 'tab-config', label: 'Personas en Gastos Personales', enabled: true, x: 0, y: 4, w: 12, h: 2, tipo: 'anillo', etiqueta: 'Integrantes', min: [4, 2] },
@@ -3524,9 +3602,7 @@
     function getBudgetForMonthYMD(monthYMD) {
       const mKey = String(monthYMD || '2026-11-01').slice(0, 10);
       const yKey = mKey.slice(0, 4);
-      if (mKey === '2026-01-01') {
-        return { gf: 0, sup: 0 };
-      }
+
       // Si el usuario activó "Presupuesto Variable según Sueldo (Proporción %)", calcular Presupuesto de Gastos Fijos y Supermercado según el sueldo del mes y los % del distribuidor
       const curMonthMode = getBudgetModeForMonthYMD(mKey);
       if (curMonthMode === 'SALARY_PROPORTION') {
@@ -6297,7 +6373,7 @@
                     '<span class="text-xs text-amber-700">' + (state._anaHormigaExpanded ? '▼' : '▶') + '</span>' +
                     '<span>🐜 Radiografía de Gastos Hormiga (≤ $10.000)</span>' +
                   '</h3>' +
-                  '<p class="text-[11px] text-amber-800 mt-0.5">Toca para desplegar compras pequeñas frecuentes.</p>' +
+                  '' +
                 '</div>' +
                 '<span class="px-2.5 py-1 rounded-lg bg-amber-200/70 text-amber-950 text-xs font-extrabold shrink-0">' + formatCLP(totalHormiga) + '</span>' +
               '</button>' +
@@ -6350,7 +6426,7 @@
                     '<span class="text-xs text-teal-700">' + (state._anaSimExpanded ? '▼' : '▶') + '</span>' +
                     '<span>🧪 Simulador Interactivo "¿Qué pasa si...?"</span>' +
                   '</h3>' +
-                  '<p class="text-[11px] text-teal-800 mt-0.5">Toca para proyectar tu ahorro en 12 meses y colchón financiero.</p>' +
+                  '' +
                 '</div>' +
                 '<span class="px-2.5 py-1 rounded-lg bg-teal-200/70 text-teal-950 text-xs font-extrabold shrink-0">+' + formatCLP(totalExtraYear) + '</span>' +
               '</button>' +
@@ -6814,7 +6890,7 @@
         }).join('');
       }
 
-      const startM = (activeY === '2026' && (!byMonth['2026-01-01'] || (byMonth['2026-01-01'].gf === 0 && byMonth['2026-01-01'].sup === 0 && byMonth['2026-01-01'].pres_gf === 0))) ? 2 : 1;
+      const startM = isDesktopWideMode() ? 1 : ((activeY === '2026' && (!byMonth['2026-01-01'] || (byMonth['2026-01-01'].gf === 0 && byMonth['2026-01-01'].sup === 0 && byMonth['2026-01-01'].pres_gf === 0))) ? 2 : 1);
       const allCols = [];
       for (let m = startM; m <= 12; m++) {
         const mPad = String(m).padStart(2, '0');
@@ -7521,7 +7597,7 @@
       }).join('');
 
       const activeY = String(curM || '2026-11-01').slice(0, 4);
-      const startM = (activeY === '2026') ? 2 : 1;
+      const startM = 1;
       const allMList = [];
       for (let m = startM; m <= 12; m++) {
         allMList.push(activeY + '-' + String(m).padStart(2, '0') + '-01');
@@ -7704,7 +7780,7 @@
       const activeY = String(curM || '2026-11-01').slice(0, 4);
       const shortY = activeY.slice(2);
       const shortMonths = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      const startM = (activeY === '2026' && (!byMonth['2026-01-01'] || (byMonth['2026-01-01'].gf === 0 && byMonth['2026-01-01'].sup === 0))) ? 2 : 1;
+      const startM = 1;
       const allCfCols = [];
       for (let m = startM; m <= 12; m++) {
         const mPad = String(m).padStart(2, '0');
@@ -15339,6 +15415,38 @@
         } catch (_e) {}
       })();
 
+      // Alternador rápido de vista PC / Móvil (solo visible en navegador de ordenador >= 768px)
+      (function initPcMobileViewToggle() {
+        const isNativeCap = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+        const btnToMobile = document.getElementById('btnTogglePcMobileView');
+        const btnToPc = document.getElementById('btnExitForceMobileFloat');
+        if (isNativeCap) {
+          if (btnToMobile) btnToMobile.style.display = 'none';
+          if (btnToPc) btnToPc.style.display = 'none';
+          return;
+        }
+        function applyForceMobile(enabled) {
+          document.body.classList.toggle('force-mobile-view', Boolean(enabled));
+          document.documentElement.classList.toggle('force-mobile-html', Boolean(enabled));
+          try { sessionStorage.setItem('ff_pc_force_mobile', enabled ? '1' : '0'); } catch (_e) {}
+          if (typeof renderAllViews === 'function') {
+            renderAllViews();
+          }
+        }
+        try {
+          if (sessionStorage.getItem('ff_pc_force_mobile') === '1' && window.innerWidth >= 768) {
+            document.body.classList.add('force-mobile-view');
+            document.documentElement.classList.add('force-mobile-html');
+          }
+        } catch (_e) {}
+        if (btnToMobile) {
+          btnToMobile.addEventListener('click', function() { applyForceMobile(true); });
+        }
+        if (btnToPc) {
+          btnToPc.addEventListener('click', function() { applyForceMobile(false); });
+        }
+      })();
+
       // Verificador de actualizaciones desde GitHub Pages con cuadro de confirmación (salta caché de 10 min y WebView)
       if (isHostedHttps) {
         function showOtaUpdateModal(remoteBuild, remoteNotes) {
@@ -15685,9 +15793,16 @@
     state._showAllMonthsMatrix = false;
     state._expandedMatrixGroups = { bm_gf: false, bm_sup: false, bm_ing: false, cf_ing: false, cf_egr: false };
 
+    function isDesktopWideMode() {
+      const isNativeCap = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+      if (isNativeCap) return false;
+      if (document.body && document.body.classList.contains('force-mobile-view')) return false;
+      return window.innerWidth >= 768;
+    }
+
     function getVisibleMatrixColumns(allCols, activeMonthKey) {
       if (!Array.isArray(allCols) || allCols.length <= 3) return allCols || [];
-      if (state._showAllMonthsMatrix) return allCols;
+      if (isDesktopWideMode() || state._showAllMonthsMatrix) return allCols;
       const activeIdx = allCols.findIndex(function(c) { return c.k === activeMonthKey; });
       const nowIdx = allCols.findIndex(function(c) { return c.k === CHILE_NOW.monthYMD; });
       // Si el mes seleccionado cae dentro de la ventana actual de 3 meses (ej: Sep, Oct, Nov), mantenerla estable
@@ -15842,6 +15957,8 @@
         cardEl.appendChild(bodyWrap);
       }
 
+      makeCardCollapsible(document.getElementById('subsec-cfg-sync'), '☁️ Sincronización Multi-Dispositivo');
+
       // 1. Plegar el Organizador de Subsecciones inline en Configuración
       const parrillaSlot = document.getElementById('parrillaInlineSlot');
       if (parrillaSlot) {
@@ -15881,16 +15998,16 @@
     const DISMISSED_TIPS_KEY = 'finanzas_movil_dismissed_tips_v1';
 
     const SECTION_INTRO_GUIDES = {
-      'tab-registro': '➕ Registra tus gastos, ingresos o cuotas en segundos. Usa los botones rápidos para repetir compras frecuentes en un toque.',
-      'tab-importar': '📄 Sube tu cartola (PDF, Excel, CSV) o foto de boleta. Revisa cada movimiento en tarjetas 1 a 1 o en tabla antes de guardar.',
-      'tab-presupuesto': '📊 Controla los últimos 3 meses de Presupuesto y Flujo de Caja. Toca los totales para desplegar su detalle o desliza → y mantén para ver el año completo.',
-      'tab-analisis': '🔬 Explora tu puntaje de salud financiera, tasa de ahorro, gastos hormiga y simulador de metas.',
-      'tab-tarjetas': '💳 Revisa cuánto debes pagar en el ciclo actual y anterior de cada tarjeta de crédito según su día de cierre.',
-      'tab-ahorros': '🏦 Organiza tus ahorros en bolsillos (emergencia, vacaciones, metas) y registra aportes o retiros.',
-      'tab-deudas': '🤝 Lleva el control separado de gastos personales y devoluciones pendientes por persona.',
-      'tab-distribuidor': '💼 Distribuye tu sueldo mensual por porcentajes o montos fijos y vincula tu presupuesto automáticamente.',
-      'tab-historial': '🗂️ Busca, filtra, edita o elimina cualquier movimiento histórico individualmente o en lote.',
-      'tab-config': '⚙️ Toca cualquier sección para abrirla y personalizar presupuestos, tarjetas, categorías, personas o botones rápidos.'
+      'tab-registro': '➕ Ingresa gastos, ingresos o cuotas con Comercio y Detalle opcional. Los botones rápidos pre-rellenan tus compras frecuentes en un toque.',
+      'tab-importar': '📄 Sube una cartola (PDF, Excel, CSV) o captura de pantalla (Tenpo, Lider, MercadoPago). Puedes revisar 1 a 1 o en tabla antes de guardar.',
+      'tab-presupuesto': '📊 Presupuesto Mensual compara tus topes de Gastos Fijos y Supermercado por mes; Flujo de Caja calcula tu excedente (Ingresos − Egresos − Ahorro). Toca cualquier mes o fila para ver su desglose.',
+      'tab-analisis': '🔬 Revisa tu salud financiera anual o mensual, comercios principales y patrones por día. Al final puedes desplegar Gastos Personales, Gastos Hormiga y el Simulador de ahorro.',
+      'tab-tarjetas': '💳 Selecciona una o más tarjetas para revisar sus ciclos de facturación según el día de cierre configurado y ver el detalle de cada cuota.',
+      'tab-ahorros': '🏦 Crea bolsillos de ahorro, registra aportes o retiros y toca cada categoría o mes para ver sus movimientos.',
+      'tab-deudas': '🤝 Controla los gastos personales y devoluciones pendientes por persona. Cada integrante puede configurarse en modo Con devolución o Solo registro.',
+      'tab-distribuidor': '💼 Ingresa el sueldo del mes y repártelo por porcentajes o montos fijos; al modificar un mes solo afecta a ese período salvo que lo apliques al año.',
+      'tab-historial': '🗂️ Filtra por año, mes, categoría, tarjeta o cuotas; busca cualquier comercio y edita o elimina registros individualmente o en lote.',
+      'tab-config': '⚙️ Configura la sincronización multidispositivo arriba y despliega cada tarjeta para administrar tarjetas, categorías, personas y botones rápidos.'
     };
 
     function triggerLightHaptic(ms) {
@@ -18205,5 +18322,6 @@
       initMultiDeviceSyncUI();
     }
   </script>
+  <button type="button" id="btnExitForceMobileFloat" title="Volver a la vista completa de Ordenador (PC)" class="hidden fixed top-4 right-4 z-[9998] items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#0A2558] hover:bg-[#133878] active:scale-95 text-white text-xs font-bold shadow-xl border border-white/20 transition"><span>💻</span> <span>Vista PC</span></button>
 </body>
 </html>
