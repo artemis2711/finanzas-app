@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2026.11.24-r10" />
+  <meta name="app-build" content="1.5.0" />
+  <meta name="app-notes" content="Nuevo: tablas de Presupuesto y Flujo de Caja sincronizadas al cambiar de mes, encabezado compacto con fecha protagonista fuera de Inicio y avisos de actualización con notas de versión." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -15049,25 +15050,25 @@
 
       // Verificador de actualizaciones desde GitHub Pages con cuadro de confirmación (salta caché de 10 min y WebView)
       if (isHostedHttps) {
-        function showOtaUpdateModal(remoteBuild) {
+        function showOtaUpdateModal(remoteBuild, remoteNotes) {
           if (document.getElementById('otaUpdateModal')) return;
+          const safeBuild = String(remoteBuild || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const safeNotes = String(remoteNotes || 'Mejoras generales de estabilidad y rendimiento.').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           const overlay = document.createElement('div');
           overlay.id = 'otaUpdateModal';
-          overlay.className = 'fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4';
+          overlay.className = 'fixed inset-0 z-[9999] bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4';
           overlay.innerHTML =
             '<div class="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-sm w-full overflow-hidden">' +
-              '<div class="bg-gradient-to-r from-[#0A2558] to-[#133878] px-5 py-4 text-white flex items-center gap-3">' +
-                '<span class="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center text-xl shrink-0">✨</span>' +
-                '<div class="min-w-0">' +
-                  '<h3 class="text-sm font-extrabold leading-tight">Nueva actualización disponible</h3>' +
-                  '<p class="text-[11px] text-blue-100 mt-0.5">Versión ' + remoteBuild.replace(/</g, '&lt;') + '</p>' +
-                '</div>' +
+              '<div class="bg-gradient-to-r from-[#0A2558] to-[#133878] px-5 py-4 text-white">' +
+                '<h3 class="text-base font-extrabold leading-tight">Nueva versión disponible</h3>' +
+                '<p class="text-xs text-blue-100 font-semibold mt-1">Versión ' + safeBuild + '</p>' +
               '</div>' +
-              '<div class="p-5 space-y-4">' +
-                '<p class="text-xs text-slate-600 leading-relaxed">Hay una versión nueva de <strong>Finanzas Personales</strong> lista para aplicar. Tus movimientos y datos locales se mantienen intactos.</p>' +
-                '<div class="flex items-center justify-end gap-2">' +
-                  '<button type="button" id="btnOtaLater" class="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition">Más tarde</button>' +
-                  '<button type="button" id="btnOtaApplyNow" class="px-4 py-2 rounded-xl bg-[#0A2558] hover:bg-[#133878] active:scale-95 text-white text-xs font-bold shadow-sm transition">Actualizar ahora</button>' +
+              '<div class="p-5 space-y-3.5">' +
+                '<div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">' + safeNotes + '</div>' +
+                '<p class="text-[11px] text-slate-500 leading-relaxed">Tus movimientos, configuraciones y datos guardados se conservan intactos.</p>' +
+                '<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-1">' +
+                  '<button type="button" id="btnOtaLater" class="px-4 py-2.5 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition">Más tarde</button>' +
+                  '<button type="button" id="btnOtaApplyNow" class="px-5 py-2.5 rounded-2xl bg-[#0A2558] hover:bg-[#133878] active:scale-95 text-white text-xs font-bold shadow-sm transition inline-flex items-center justify-center gap-1.5"><span>📲</span> <span>Actualizar</span></button>' +
                 '</div>' +
               '</div>' +
             '</div>';
@@ -15105,11 +15106,13 @@
             .then(function(htmlText) {
               if (!htmlText) return;
               const m = htmlText.match(/<meta\s+name=["']app-build["']\s+content=["']([^"']+)["']/i);
+              const n = htmlText.match(/<meta\s+name=["']app-notes["']\s+content=["']([^"']+)["']/i);
               const remoteBuild = m ? String(m[1] || '').trim() : '';
+              const remoteNotes = n ? String(n[1] || '').trim() : '';
               if (remoteBuild && remoteBuild !== localBuild) {
                 if (!isManual && sessionStorage.getItem('ff_ota_dismissed_build') === remoteBuild) return;
                 if (!isManual && sessionStorage.getItem('ff_ota_reloaded_build') === remoteBuild) return;
-                showOtaUpdateModal(remoteBuild);
+                showOtaUpdateModal(remoteBuild, remoteNotes);
               } else if (isManual && typeof showToast === 'function') {
                 showToast('Ya tienes la última versión (' + (localBuild || 'actual') + ').', '✅');
               }
