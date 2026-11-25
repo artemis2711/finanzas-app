@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="1.8.3" />
+  <meta name="app-build" content="1.9.1" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -806,6 +806,9 @@
       body:not(.force-mobile-view) #btnExitForceMobileFloat { display: none !important; }
       body:not(.force-mobile-view) .matrix-window-bar { display: none !important; }
       body:not(.force-mobile-view) #debtsTableCompactControls { display: none !important; }
+      body:not(.force-mobile-view) #homeQuickAccessSection { display: none !important; }
+      body:not(.force-mobile-view) #homePcDashboardGrid { display: block !important; }
+      body:not(.force-mobile-view) #homeLastMovSection { display: none !important; }
       body:not(.force-mobile-view):not(.on-home-tab):not(.on-config-tab) #topSummaryRibbonSection {
         display: block !important;
       }
@@ -1158,7 +1161,7 @@
         </div>
 
         <!-- Pie de tarjeta: Último Movimiento -->
-        <div class="border-t border-slate-100 bg-slate-50/60 px-4 sm:px-5 py-3">
+        <div id="homeLastMovSection" class="border-t border-slate-100 bg-slate-50/60 px-4 sm:px-5 py-3">
           <div class="flex items-center justify-between mb-1.5">
             <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Último Movimiento</span>
             <button type="button" data-home-go="tab-historial" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558] flex items-center gap-0.5">
@@ -1178,13 +1181,60 @@
         </div>
       </div>
 
-      <!-- ACCESOS RÁPIDOS (Reemplaza al panel inferior únicamente en Inicio) -->
-      <div class="space-y-2.5">
+      <!-- ACCESOS RÁPIDOS (visible en móvil/APK; oculto en PC donde ya existe la barra superior) -->
+      <div id="homeQuickAccessSection" class="space-y-2.5">
         <div class="flex items-center justify-between px-1">
           <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Accesos Rápidos</h2>
           <span class="text-[10px] font-semibold text-slate-400">Todas las secciones</span>
         </div>
         <div id="homeQuickAccessGrid" class="grid grid-cols-4 sm:grid-cols-5 gap-2.5"></div>
+      </div>
+
+      <!-- PANEL EJECUTIVO DE INICIO (EXCLUSIVO MODO PC) -->
+      <div id="homePcDashboardGrid" class="hidden space-y-5">
+        <!-- Franja rápida de Flujo de Caja del Mes -->
+        <div id="homePcCashflowStrip" class="grid grid-cols-4 gap-3"></div>
+
+        <!-- Grilla principal 2 columnas (7 / 5) -->
+        <div class="grid grid-cols-12 gap-5 items-start">
+          <!-- Columna izquierda: Tarjetas ciclo activo + Últimos 6 movimientos -->
+          <div class="col-span-7 space-y-5">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>💳</span> <span>Tarjetas de Crédito — Ciclo Activo</span></h2>
+                <button type="button" data-home-go="tab-tarjetas" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver tarjetas ›</button>
+              </div>
+              <div id="homePcCardsList" class="grid grid-cols-2 gap-3"></div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>🧾</span> <span>Últimos Movimientos</span></h2>
+                <button type="button" data-home-go="tab-historial" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver historial ›</button>
+              </div>
+              <div id="homePcRecentMovs" class="divide-y divide-slate-100"></div>
+            </div>
+          </div>
+
+          <!-- Columna derecha: Top Categorías + Estado de Gastos Personales -->
+          <div class="col-span-5 space-y-5">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>📊</span> <span>Top Categorías del Mes</span></h2>
+                <button type="button" data-home-go="tab-presupuesto" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver resumen ›</button>
+              </div>
+              <div id="homePcTopCats" class="space-y-2.5"></div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5"><span>🤝</span> <span>Gastos Personales del Mes</span></h2>
+                <button type="button" data-home-go="tab-deudas" class="text-[11px] font-extrabold text-[#1652B8] hover:text-[#0A2558]">Ver detalle ›</button>
+              </div>
+              <div id="homePcPersonalStatus" class="space-y-2"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- MIS AHORROS (Resumen compacto de lo más relevante) -->
@@ -17341,6 +17391,171 @@
       if (notifDot) {
         const hasNotifCards = (state.cards || []).some(function(c) { return c && c.billingNotifEnabled === true; });
         notifDot.classList.toggle('hidden', !hasNotifCards);
+      }
+
+      // Panel Ejecutivo exclusivo de Modo PC
+      renderHomePcDashboard(agg, b, monthKey, masked);
+    }
+
+    function renderHomePcDashboard(agg, b, monthKey, masked) {
+      const cfStrip = document.getElementById('homePcCashflowStrip');
+      const cardsHost = document.getElementById('homePcCardsList');
+      const recentHost = document.getElementById('homePcRecentMovs');
+      const catsHost = document.getElementById('homePcTopCats');
+      const persHost = document.getElementById('homePcPersonalStatus');
+      if (!cfStrip || !cardsHost || !recentHost || !catsHost || !persHost) return;
+
+      const fmtVal = function(v) { return masked ? '$•••••' : formatCLP(v); };
+
+      // 1. Franja de Flujo de Caja del mes activo
+      const cf = (typeof computeCashFlowForMonthBucket === 'function')
+        ? computeCashFlowForMonthBucket(monthKey, b)
+        : { totalIngresos: 0, totalEgresos: 0, ahorroEnBolsillos: 0, excedenteCajaSinApartar: 0 };
+
+      cfStrip.innerHTML =
+        '<div class="bg-white rounded-2xl border border-emerald-200/80 p-3.5 shadow-xs">' +
+          '<div class="text-[10px] font-bold uppercase text-emerald-800">➕ Ingresos Mes</div>' +
+          '<div class="text-lg font-extrabold text-emerald-700 mt-0.5">' + fmtVal(cf.totalIngresos || 0) + '</div>' +
+        '</div>' +
+        '<div class="bg-white rounded-2xl border border-rose-200/80 p-3.5 shadow-xs">' +
+          '<div class="text-[10px] font-bold uppercase text-rose-800">➖ Egresos Mes</div>' +
+          '<div class="text-lg font-extrabold text-rose-700 mt-0.5">' + fmtVal(cf.totalEgresos || 0) + '</div>' +
+        '</div>' +
+        '<div class="bg-white rounded-2xl border border-sky-200/80 p-3.5 shadow-xs">' +
+          '<div class="text-[10px] font-bold uppercase text-sky-900">🏦 Ahorro Mes</div>' +
+          '<div class="text-lg font-extrabold text-sky-800 mt-0.5">' + fmtVal(cf.ahorroEnBolsillos || 0) + '</div>' +
+        '</div>' +
+        '<div class="bg-white rounded-2xl border border-teal-300 p-3.5 shadow-xs">' +
+          '<div class="text-[10px] font-bold uppercase text-teal-900">💵 Excedente Caja</div>' +
+          '<div class="text-lg font-extrabold ' + ((cf.excedenteCajaSinApartar || 0) >= 0 ? 'text-teal-800' : 'text-rose-600') + ' mt-0.5">' + fmtVal(cf.excedenteCajaSinApartar || 0) + '</div>' +
+        '</div>';
+
+      // 2. Tarjetas de Crédito — Ciclo Activo
+      const creditCards = (state.cards || []).filter(function(c) { return c && c.tipo_medio === 'Crédito'; });
+      const byCycle = (agg && agg.byCycle) ? agg.byCycle : {};
+      if (!creditCards.length) {
+        cardsHost.innerHTML = '<div class="col-span-2 text-xs text-slate-400 py-3 text-center">No hay tarjetas de crédito configuradas.</div>';
+      } else {
+        cardsHost.innerHTML = creditCards.map(function(card) {
+          const cName = String(card.nombre_tarjeta || 'Tarjeta');
+          const cDay = Number(card.dia_cierre || 20);
+          let activeCycleLbl = 'Ciclo activo';
+          let cycleTotal = 0;
+          let cycleCount = 0;
+          try {
+            if (typeof getBillingCycleForDate === 'function') {
+              const refDate = monthKey.slice(0, 8) + String(Math.min(28, Math.max(1, cDay))).padStart(2, '0');
+              activeCycleLbl = getBillingCycleForDate(refDate, cName) || activeCycleLbl;
+            }
+          } catch (_e) {}
+          const cKey = cName + '||' + activeCycleLbl;
+          if (byCycle[cKey]) {
+            cycleTotal = Number(byCycle[cKey].total || 0);
+            cycleCount = Number(byCycle[cKey].count || 0);
+          } else {
+            // Fallback: sumar gastos de esta tarjeta en el mes activo
+            (state.movimientos || []).forEach(function(m) {
+              if (!m || m.tarjeta !== cName || m.tipo_movimiento !== 'Gasto') return;
+              if (String(m.mes_imputacion || '').slice(0, 7) === monthKey.slice(0, 7)) {
+                cycleTotal += Math.abs(Number(m.monto || 0));
+                cycleCount++;
+              }
+            });
+          }
+          return '<button type="button" data-home-go="tab-tarjetas" class="text-left p-3.5 rounded-2xl bg-slate-50 hover:bg-blue-50/50 border border-slate-200/80 transition space-y-1">' +
+            '<div class="flex items-center justify-between gap-2">' +
+              '<span class="text-xs font-extrabold text-slate-900 truncate">' + escapeHtml(cName) + '</span>' +
+              '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 shrink-0">Cierre día ' + cDay + '</span>' +
+            '</div>' +
+            '<div class="text-lg font-extrabold text-[#0A2558]">' + fmtVal(cycleTotal) + '</div>' +
+            '<div class="text-[10px] text-slate-500 truncate">' + escapeHtml(activeCycleLbl) + ' • ' + cycleCount + ' movs</div>' +
+          '</button>';
+        }).join('');
+      }
+
+      // 3. Últimos 6 Movimientos (por orden de ingreso)
+      const allMovs = Array.isArray(state.movimientos) ? state.movimientos : [];
+      const recent6 = allMovs.slice().sort(function(a, b2) {
+        const ra = String(a.fecha_registro || '');
+        const rb = String(b2.fecha_registro || '');
+        if (ra !== rb) return rb.localeCompare(ra);
+        const ua = Number(a.updated_at_ms || 0);
+        const ub = Number(b2.updated_at_ms || 0);
+        if (ua !== ub) return ub - ua;
+        return (typeof compareByIngresoDesc === 'function') ? compareByIngresoDesc(a, b2) : 0;
+      }).slice(0, 6);
+
+      if (!recent6.length) {
+        recentHost.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">Sin movimientos registrados aún.</div>';
+      } else {
+        recentHost.innerHTML = recent6.map(function(m) {
+          const isInc = (m.tipo_movimiento === 'Ingreso' || m.tipo_movimiento === 'Devolución');
+          const isSav = (m.tipo_movimiento === 'Ahorro');
+          const sign = isInc ? '+' : (isSav ? '' : '-');
+          const amtCls = isInc ? 'text-emerald-700' : (isSav ? 'text-blue-700' : 'text-slate-900');
+          const badge = isSav ? '🏦' : (isInc ? '↙' : '↗');
+          const badgeCls = isSav ? 'bg-blue-100 text-blue-700' : (isInc ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600');
+          const fStr = String(m.fecha_compra || '').slice(0, 10);
+          return '<div class="py-2 flex items-center justify-between gap-3 text-xs">' +
+            '<div class="flex items-center gap-2.5 min-w-0">' +
+              '<span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ' + badgeCls + '">' + badge + '</span>' +
+              '<div class="min-w-0">' +
+                '<div class="font-semibold text-slate-800 truncate">' + escapeHtml(m.detalle || m.categoria || 'Movimiento') + '</div>' +
+                '<div class="text-[10px] text-slate-500 truncate">' + escapeHtml([fStr, m.categoria || '', m.tarjeta || ''].filter(Boolean).join(' • ')) + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="font-extrabold shrink-0 ' + amtCls + '">' + (masked ? '$•••••' : (sign + formatCLP(Math.abs(Number(m.monto || 0))))) + '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      // 4. Top 5 Categorías de Gasto del Mes Activo
+      const catEntries = Object.keys((b && b.cats) ? b.cats : {})
+        .map(function(k) { return { name: k, val: Math.abs(Number(b.cats[k] || 0)) }; })
+        .filter(function(x) { return x.val > 0; })
+        .sort(function(a, b2) { return b2.val - a.val; })
+        .slice(0, 5);
+      const totalCats = catEntries.reduce(function(acc, x) { return acc + x.val; }, 0) || 1;
+
+      if (!catEntries.length) {
+        catsHost.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">Sin gastos registrados en este mes.</div>';
+      } else {
+        catsHost.innerHTML = catEntries.map(function(c) {
+          const pct = Math.round((c.val / totalCats) * 100);
+          return '<div class="space-y-1">' +
+            '<div class="flex items-center justify-between text-xs gap-2">' +
+              '<span class="font-semibold text-slate-800 truncate">' + escapeHtml(c.name) + ' <span class="text-[10px] text-slate-400">(' + pct + '%)</span></span>' +
+              '<span class="font-extrabold text-slate-900 shrink-0">' + fmtVal(c.val) + '</span>' +
+            '</div>' +
+            '<div class="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">' +
+              '<div class="h-full rounded-full bg-[#0A2558]" style="width:' + pct + '%"></div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      // 5. Estado de Gastos Personales del Mes Activo
+      const enabledPeople = (state.personalPeople || []).filter(function(p) { return p && p.nombre && p.mostrar_en_seccion !== false; });
+      if (!enabledPeople.length) {
+        persHost.innerHTML = '<div class="text-xs text-slate-400 py-3 text-center">Sin personas configuradas.</div>';
+      } else {
+        persHost.innerHTML = enabledPeople.map(function(p) {
+          const pb = (b && b.byPerson && b.byPerson[p.nombre]) ? b.byPerson[p.nombre] : { gasto: 0, dev: 0, pend: 0 };
+          const reqDev = (p.requiere_devolucion !== false);
+          const pend = reqDev ? Math.round(Number(pb.gasto || 0) - Number(pb.dev || 0)) : 0;
+          const badgeHtml = !reqDev
+            ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">Solo registro</span>'
+            : (pend > 0
+              ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">Pend: ' + fmtVal(pend) + '</span>'
+              : '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">✓ Saldado</span>');
+          return '<div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2">' +
+            '<div class="min-w-0">' +
+              '<div class="text-xs font-extrabold text-slate-900 truncate">' + escapeHtml(p.nombre) + '</div>' +
+              '<div class="text-[10px] text-slate-500">Gasto: ' + fmtVal(pb.gasto || 0) + (reqDev ? (' • Dev: ' + fmtVal(pb.dev || 0)) : '') + '</div>' +
+            '</div>' +
+            '<div class="shrink-0">' + badgeHtml + '</div>' +
+          '</div>';
+        }).join('');
       }
     }
 
