@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2026.11.24-r9" />
+  <meta name="app-build" content="2026.11.24-r10" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -15387,15 +15387,19 @@
     function getVisibleMatrixColumns(allCols, activeMonthKey) {
       if (!Array.isArray(allCols) || allCols.length <= 3) return allCols || [];
       if (state._showAllMonthsMatrix) return allCols;
-      // Anclar siempre a los últimos 3 meses reales respecto al mes actual (ej: Sep, Oct, Nov)
-      // para que seleccionar Septiembre u Octubre NO cambie las columnas visibles.
-      const anchorKey = CHILE_NOW.monthYMD;
-      let idx = allCols.findIndex(function(c) { return c.k === anchorKey; });
-      if (idx === -1) {
-        // Si está viendo otro año (ej: 2027), usar los últimos 3 meses de ese año o la posición actual si existe
-        idx = allCols.length - 1;
+      const activeIdx = allCols.findIndex(function(c) { return c.k === activeMonthKey; });
+      const nowIdx = allCols.findIndex(function(c) { return c.k === CHILE_NOW.monthYMD; });
+      // Si el mes seleccionado cae dentro de la ventana actual de 3 meses (ej: Sep, Oct, Nov), mantenerla estable
+      if (nowIdx !== -1) {
+        const defEnd = Math.max(2, nowIdx);
+        const defStart = Math.max(0, defEnd - 2);
+        if (activeIdx >= defStart && activeIdx <= defEnd) {
+          return allCols.slice(defStart, defEnd + 1);
+        }
       }
-      const end = Math.max(2, idx);
+      // Si el usuario elige cualquier otro mes (ej: Julio, Agosto, Diciembre, etc.), mover la ventana de 3 meses hacia ese mes
+      const targetIdx = activeIdx !== -1 ? activeIdx : (nowIdx !== -1 ? nowIdx : allCols.length - 1);
+      const end = Math.min(allCols.length - 1, Math.max(2, targetIdx));
       const start = Math.max(0, end - 2);
       return allCols.slice(start, end + 1);
     }
