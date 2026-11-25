@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
-  <meta name="theme-color" content="#1B365D" />
+  <meta name="theme-color" content="#0A2558" />
+  <meta name="app-build" content="2026.11.24-r5" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -14968,6 +14969,50 @@
             if (reg && reg.update) reg.update().catch(function() {});
           }).catch(function() {});
         }
+      }
+
+      // Auto-actualización instantánea desde GitHub Pages (salta el caché de 10 min de GitHub y de Android WebView)
+      if (isHostedHttps) {
+        window.checkHostedAppUpdate = function(isManual) {
+          const localMeta = document.querySelector('meta[name="app-build"]');
+          const localBuild = localMeta ? String(localMeta.getAttribute('content') || '').trim() : '';
+          const checkUrl = './index.html?t=' + Date.now();
+          return fetch(checkUrl, { cache: 'no-store' })
+            .then(function(resp) { return resp.ok ? resp.text() : ''; })
+            .then(function(htmlText) {
+              if (!htmlText) return;
+              const m = htmlText.match(/<meta\s+name=["']app-build["']\s+content=["']([^"']+)["']/i);
+              const remoteBuild = m ? String(m[1] || '').trim() : '';
+              if (remoteBuild && remoteBuild !== localBuild) {
+                const lastReloaded = sessionStorage.getItem('ff_ota_reloaded_build');
+                if (!isManual && lastReloaded === remoteBuild) return;
+                sessionStorage.setItem('ff_ota_reloaded_build', remoteBuild);
+                if (typeof showToast === 'function') {
+                  showToast('Nueva versión (' + remoteBuild + ') encontrada. Actualizando...', '✨');
+                }
+                const clearCachesPromise = (typeof caches !== 'undefined' && caches.keys)
+                  ? caches.keys().then(function(keys) { return Promise.all(keys.map(function(k) { return caches.delete(k); })); }).catch(function() {})
+                  : Promise.resolve();
+                clearCachesPromise.then(function() {
+                  const basePath = window.location.pathname || './';
+                  window.location.replace(basePath + '?v=' + encodeURIComponent(remoteBuild));
+                });
+              } else if (isManual && typeof showToast === 'function') {
+                showToast('Ya tienes la última versión (' + (localBuild || 'actual') + ').', '✅');
+              }
+            })
+            .catch(function() {
+              if (isManual && typeof showToast === 'function') {
+                showToast('Sin conexión para buscar actualizaciones.', '📡');
+              }
+            });
+        };
+        setTimeout(function() { window.checkHostedAppUpdate(false); }, 1200);
+        document.addEventListener('visibilitychange', function() {
+          if (document.visibilityState === 'visible') {
+            window.checkHostedAppUpdate(false);
+          }
+        });
       }
     }
 
