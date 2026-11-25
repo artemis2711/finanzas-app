@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="1.6.0" />
-  <meta name="app-notes" content="Nuevo: corrección de parpadeo al sincronizar, campo Detalle opcional junto a Comercio en Registro y Autoregistro, etiqueta Cargo a: con opción Compartido, y sección dedicada de Análisis de Gastos Personales." />
+  <meta name="app-build" content="1.6.1" />
+  <meta name="app-notes" content="Corrección en Análisis de Gastos Personales (solo categoría Gasto personal y personas con devolución), reubicado como penúltima subsección y desplegable al tocar junto con Gastos Hormiga." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -1676,24 +1676,28 @@
           <div id="anaChartsContainer" class="space-y-5"></div>
         </div>
 
-        <!-- Subsección 4: Hallazgos No Evidentes (Gastos Hormiga, Día de la Semana, Pareto 80/20 y Simulador) -->
+        <!-- Penúltima Subsección: Análisis Dedicado de Gastos Personales (desplegable, cerrado por defecto) -->
+        <div id="subsec-ana-personal" class="bg-white rounded-2xl shadow-sm border border-amber-200/90 overflow-hidden">
+          <button type="button" id="btnToggleAnaPersonal" class="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left hover:bg-amber-50/40 transition">
+            <div class="min-w-0">
+              <h3 class="text-sm md:text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <span id="anaPersonalChevron" class="text-xs text-amber-700 transition-transform">▶</span>
+                <span>🤝 Análisis de Gastos Personales</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">Toca para desplegar el desglose exclusivo de gastos personales y devoluciones.</p>
+            </div>
+            <span id="anaPersonalQuickTotal" class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-950 text-xs font-extrabold shrink-0">$0</span>
+          </button>
+          <div id="anaPersonalBody" class="hidden px-4 sm:px-5 pb-5 pt-2 border-t border-slate-100 space-y-4">
+            <div id="anaPersonalPersonPills" class="flex flex-wrap items-center gap-1.5"></div>
+            <div id="anaPersonalContent" class="space-y-4"></div>
+          </div>
+        </div>
+
+        <!-- Última Subsección: Hallazgos No Evidentes (Pareto 80/20, Gastos Hormiga desplegable, Día de la Semana y Simulador) -->
         <div id="subsec-ana-insights" data-subsec-item class="grid grid-cols-1 lg:grid-cols-12 gap-5">
           <div id="anaInsightsLeft" class="lg:col-span-6 space-y-5"></div>
           <div id="anaInsightsRight" class="lg:col-span-6 space-y-5"></div>
-        </div>
-
-        <!-- Subsección 5: Análisis Dedicado de Gastos Personales (independiente del presupuesto global) -->
-        <div id="subsec-ana-personal" class="bg-white rounded-2xl shadow-sm border border-amber-200/90 p-5 space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div>
-              <h3 class="text-sm md:text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <span>🤝</span> <span>Análisis de Gastos Personales</span>
-              </h3>
-              <p class="text-xs text-slate-500">Sección dedicada exclusivamente a gastos personales y devoluciones, separada del análisis global.</p>
-            </div>
-            <div id="anaPersonalPersonPills" class="flex flex-wrap items-center gap-1.5"></div>
-          </div>
-          <div id="anaPersonalContent" class="space-y-4"></div>
         </div>
       </div>
     </section>
@@ -6277,12 +6281,18 @@
             '</div>' +
             '<div>' + (paretoHtml || '<p class="text-xs text-slate-400">Sin comercios registrados.</p>') + '</div>' +
           '</div>' +
-          '<div class="bg-amber-50/50 rounded-2xl shadow-sm border border-amber-200 p-5 space-y-3">' +
-            '<div class="flex items-center justify-between border-b border-amber-200/70 pb-2">' +
-              '<div><h3 class="text-sm font-bold text-amber-950">🐜 Radiografía de Gastos Hormiga (≤ $10.000)</h3><p class="text-[11px] text-amber-800">Compras pequeñas frecuentes que se acumulan silenciosamente.</p></div>' +
-              '<span class="px-2.5 py-1 rounded-lg bg-amber-200/70 text-amber-950 text-xs font-extrabold">' + formatCLP(totalHormiga) + '</span>' +
-            '</div>' +
-            '<div>' + hormHtml + '</div>' +
+          '<div class="bg-amber-50/50 rounded-2xl shadow-sm border border-amber-200 overflow-hidden">' +
+            '<button type="button" data-toggle-ana-hormiga="1" class="w-full p-4 sm:p-5 flex items-center justify-between gap-2 text-left hover:bg-amber-100/40 transition">' +
+              '<div class="min-w-0">' +
+                '<h3 class="text-sm font-bold text-amber-950 flex items-center gap-1.5">' +
+                  '<span class="text-xs text-amber-700">' + (state._anaHormigaExpanded ? '▼' : '▶') + '</span>' +
+                  '<span>🐜 Radiografía de Gastos Hormiga (≤ $10.000)</span>' +
+                '</h3>' +
+                '<p class="text-[11px] text-amber-800 mt-0.5">Toca para desplegar compras pequeñas frecuentes.</p>' +
+              '</div>' +
+              '<span class="px-2.5 py-1 rounded-lg bg-amber-200/70 text-amber-950 text-xs font-extrabold shrink-0">' + formatCLP(totalHormiga) + '</span>' +
+            '</button>' +
+            '<div class="' + (state._anaHormigaExpanded ? '' : 'hidden ') + 'px-4 sm:px-5 pb-4 pt-2 border-t border-amber-200/70">' + hormHtml + '</div>' +
           '</div>';
 
         // 3. Patrón por Día de la Semana (Lun a Dom)
@@ -6346,25 +6356,61 @@
             '</div>' +
           '</div>';
       }
-      renderPersonalAnalyticsSection(curM);
+      renderPersonalAnalyticsSection(byMonth, curM);
     }
 
-    function renderPersonalAnalyticsSection(curM) {
+    function renderPersonalAnalyticsSection(byMonth, curM) {
       const pillsHost = document.getElementById('anaPersonalPersonPills');
       const contentHost = document.getElementById('anaPersonalContent');
+      const toggleBtn = document.getElementById('btnToggleAnaPersonal');
+      const bodyEl = document.getElementById('anaPersonalBody');
+      const chevEl = document.getElementById('anaPersonalChevron');
+      const quickTotEl = document.getElementById('anaPersonalQuickTotal');
       if (!pillsHost || !contentHost) return;
 
+      // Bind toggle de Análisis de Gastos Personales (colapsado por defecto)
+      if (toggleBtn && !toggleBtn._boundAnaPersonalToggle) {
+        toggleBtn._boundAnaPersonalToggle = true;
+        toggleBtn.addEventListener('click', function() {
+          state._anaPersonalExpanded = !state._anaPersonalExpanded;
+          if (bodyEl) bodyEl.classList.toggle('hidden', !state._anaPersonalExpanded);
+          if (chevEl) chevEl.textContent = state._anaPersonalExpanded ? '▼' : '▶';
+        });
+      }
+      if (bodyEl) bodyEl.classList.toggle('hidden', !state._anaPersonalExpanded);
+      if (chevEl) chevEl.textContent = state._anaPersonalExpanded ? '▼' : '▶';
+
+      // Bind toggle de Gastos Hormiga (colapsado por defecto)
+      const leftInsightsEl = document.getElementById('anaInsightsLeft');
+      if (leftInsightsEl && !leftInsightsEl._boundHormigaToggle) {
+        leftInsightsEl._boundHormigaToggle = true;
+        leftInsightsEl.addEventListener('click', function(e) {
+          const hBtn = e.target.closest('[data-toggle-ana-hormiga]');
+          if (!hBtn) return;
+          state._anaHormigaExpanded = !state._anaHormigaExpanded;
+          const agg = state._lastAggregates || computeAggregates();
+          renderAnalyticsView(agg.byMonth, state.selectedMonth);
+        });
+      }
+
       const activeYear = (document.getElementById('anaYearSelect') ? document.getElementById('anaYearSelect').value : '') || String(curM || state.selectedMonth || '2026-11-01').slice(0, 4);
-      const activeMonthKey = String(curM || state.selectedMonth || (activeYear + '-11-01')).slice(0, 7);
-      const peopleNames = (Array.isArray(state.personalPeople) && state.personalPeople.length > 0)
-        ? state.personalPeople.map(function(p) { return String(p.nombre || '').trim(); }).filter(Boolean)
-        : ['Rubén', 'Daniela'];
+      const activeMonthYMD = String(curM || state.selectedMonth || (activeYear + '-11-01')).slice(0, 10);
+      const activeMonthKey = activeMonthYMD.slice(0, 7);
+
+      const peopleObjs = (Array.isArray(state.personalPeople) && state.personalPeople.length > 0)
+        ? state.personalPeople.filter(function(p) { return p && p.nombre && p.mostrar_en_seccion !== false; })
+        : [{ nombre: 'Rubén', requiere_devolucion: true }, { nombre: 'Daniela', requiere_devolucion: true }];
+
+      const peopleNames = peopleObjs.map(function(p) { return String(p.nombre).trim(); });
+      const reqDevByPerson = {};
+      peopleObjs.forEach(function(p) {
+        reqDevByPerson[String(p.nombre).trim()] = (p.requiere_devolucion !== false);
+      });
 
       if (!state._anaPersonalFilter) state._anaPersonalFilter = 'ALL';
       const selFilter = state._anaPersonalFilter;
 
-      // Renderizar píldoras de filtro por persona
-      const pillOpts = [{ id: 'ALL', label: 'Todas' }].concat(peopleNames.map(function(n) { return { id: n, label: n }; })).concat([{ id: 'Ambos', label: 'Compartido' }]);
+      const pillOpts = [{ id: 'ALL', label: 'Todas' }].concat(peopleNames.map(function(n) { return { id: n, label: n }; }));
       pillsHost.innerHTML = pillOpts.map(function(o) {
         const act = (selFilter === o.id);
         return '<button type="button" data-ana-pers-filter="' + escapeHtml(o.id) + '" class="px-2.5 py-1 rounded-full text-[11px] font-bold transition border ' +
@@ -6378,70 +6424,83 @@
           const btn = e.target.closest('[data-ana-pers-filter]');
           if (!btn) return;
           state._anaPersonalFilter = btn.getAttribute('data-ana-pers-filter') || 'ALL';
-          renderPersonalAnalyticsSection(state.selectedMonth);
+          const agg = state._lastAggregates || computeAggregates();
+          renderPersonalAnalyticsSection(agg.byMonth, state.selectedMonth);
         });
       }
 
-      // Recolectar gastos personales y devoluciones del año activo
-      const movs = Array.isArray(state.movimientos) ? state.movimientos : [];
+      // Leer EXACTAMENTE desde byMonth[mk].byPerson (misma fuente canónica que la pestaña Gastos Personales: solo categoría Gasto personal)
       const perPersonMap = {};
-      peopleNames.forEach(function(n) { perPersonMap[n] = { gastoYear: 0, devYear: 0, gastoMes: 0, devMes: 0, countYear: 0 }; });
-      perPersonMap['Compartido'] = { gastoYear: 0, devYear: 0, gastoMes: 0, devMes: 0, countYear: 0 };
+      peopleNames.forEach(function(n) {
+        perPersonMap[n] = { gastoYear: 0, devYear: 0, gastoMes: 0, devMes: 0, countYear: 0, requiereDev: reqDevByPerson[n] !== false };
+      });
 
       const monthlyTotals = {};
       for (let mm = 1; mm <= 12; mm++) monthlyTotals[activeYear + '-' + String(mm).padStart(2, '0')] = { gasto: 0, dev: 0 };
       const merchantTotals = {};
 
-      let totalGastoYear = 0, totalDevYear = 0, totalGastoMes = 0, totalDevMes = 0, totalCountYear = 0;
+      let totalGastoYear = 0, totalDevYear = 0, totalPendYear = 0;
+      let totalGastoMes = 0, totalDevMes = 0, totalPendMes = 0, totalCountYear = 0;
 
-      movs.forEach(function(m) {
-        if (!m) return;
-        const mImp = String(m.mes_imputacion || m.fecha_compra || '').slice(0, 7);
-        if (!mImp.startsWith(activeYear + '-')) return;
-        const personaRaw = String(m.persona || '').trim();
-        const pLow = personaRaw.toLowerCase();
-        const isBudget = (!personaRaw || pLow === 'presupuesto' || pLow === 'familiar' || pLow === 'especial');
-        const isShared = (pLow === 'ambos' || pLow === 'compartido');
-        const isPersonalExpense = (m.tipo_movimiento === 'Gasto' && (m.categoria === 'Gasto personal' || (!isBudget)));
-        const isPersonalDev = (m.tipo_movimiento === 'Ingreso' && (String(m.tipo_ingreso || '').indexOf('Devolución') !== -1 || (!isBudget && m.categoria !== 'Ingreso')));
-        if (!isPersonalExpense && !isPersonalDev) return;
+      const monthKeys = Object.keys(byMonth || {}).filter(function(mk) { return mk.startsWith(activeYear + '-'); }).sort();
+      monthKeys.forEach(function(mk) {
+        const b = byMonth[mk];
+        if (!b || !b.byPerson) return;
+        const ym = mk.slice(0, 7);
+        peopleNames.forEach(function(pName) {
+          const pb = b.byPerson[pName];
+          if (!pb) return;
+          const g = Math.round(Number(pb.gasto || 0));
+          const d = Math.round(Number(pb.dev || 0));
+          const items = Array.isArray(pb.personal_items) ? pb.personal_items : [];
+          const reqDev = reqDevByPerson[pName] !== false;
 
-        const amt = Math.abs(Number(m.monto || 0));
-        if (amt <= 0) return;
+          perPersonMap[pName].gastoYear += g;
+          perPersonMap[pName].devYear += d;
+          perPersonMap[pName].countYear += items.length;
+          if (ym === activeMonthKey) {
+            perPersonMap[pName].gastoMes += g;
+            perPersonMap[pName].devMes += d;
+          }
 
-        const bucketName = isShared ? 'Compartido' : personaRaw;
-        if (!perPersonMap[bucketName]) perPersonMap[bucketName] = { gastoYear: 0, devYear: 0, gastoMes: 0, devMes: 0, countYear: 0 };
+          if (selFilter !== 'ALL' && selFilter !== pName) return;
 
-        if (isPersonalExpense) {
-          perPersonMap[bucketName].gastoYear += amt;
-          perPersonMap[bucketName].countYear += 1;
-          if (mImp === activeMonthKey) perPersonMap[bucketName].gastoMes += amt;
-        } else if (isPersonalDev) {
-          perPersonMap[bucketName].devYear += amt;
-          if (mImp === activeMonthKey) perPersonMap[bucketName].devMes += amt;
-        }
+          totalGastoYear += g;
+          totalDevYear += d;
+          totalCountYear += items.length;
+          if (ym === activeMonthKey) {
+            totalGastoMes += g;
+            totalDevMes += d;
+            if (reqDev) totalPendMes += Math.max(0, g - d);
+          }
+          if (monthlyTotals[ym]) {
+            monthlyTotals[ym].gasto += g;
+            monthlyTotals[ym].dev += d;
+          }
+          items.forEach(function(it) {
+            const mTitle = String(it.detalle || it.categoria || 'Gasto personal').trim();
+            const mAmt = Math.abs(Number(it.monto_ef || it.monto || 0));
+            if (mAmt > 0) merchantTotals[mTitle] = (merchantTotals[mTitle] || 0) + mAmt;
+          });
+        });
+      });
 
-        const matchesFilter = (selFilter === 'ALL') || (selFilter === 'Ambos' && isShared) || (personaRaw === selFilter);
-        if (!matchesFilter) return;
-
-        if (isPersonalExpense) {
-          totalGastoYear += amt;
-          totalCountYear += 1;
-          if (mImp === activeMonthKey) totalGastoMes += amt;
-          if (monthlyTotals[mImp]) monthlyTotals[mImp].gasto += amt;
-          const mTitle = String(m.detalle || m.categoria || 'Gasto personal').trim();
-          merchantTotals[mTitle] = (merchantTotals[mTitle] || 0) + amt;
-        } else if (isPersonalDev) {
-          totalDevYear += amt;
-          if (mImp === activeMonthKey) totalDevMes += amt;
-          if (monthlyTotals[mImp]) monthlyTotals[mImp].dev += amt;
+      // Pendiente anual solo para personas con devolución habilitada
+      peopleNames.forEach(function(pName) {
+        if (selFilter !== 'ALL' && selFilter !== pName) return;
+        const r = perPersonMap[pName];
+        if (r && r.requiereDev) {
+          totalPendYear += Math.max(0, r.gastoYear - r.devYear);
         }
       });
 
-      const pendMes = Math.max(0, totalGastoMes - totalDevMes);
-      const pendYear = Math.max(0, totalGastoYear - totalDevYear);
+      if (quickTotEl) {
+        const allMesSum = peopleNames.reduce(function(acc, n) { return acc + (perPersonMap[n] ? perPersonMap[n].gastoMes : 0); }, 0);
+        quickTotEl.textContent = formatCLP(allMesSum) + ' mes';
+      }
 
-      // KPIs principales
+      const selectedReqDev = (selFilter === 'ALL') ? true : (reqDevByPerson[selFilter] !== false);
+
       let html =
         '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">' +
           '<div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200">' +
@@ -6450,21 +6509,20 @@
           '</div>' +
           '<div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">' +
             '<div class="text-[10px] font-bold text-emerald-900 uppercase">Devuelto Mes</div>' +
-            '<div class="text-base font-extrabold text-emerald-700 mt-0.5">' + formatCLP(totalDevMes) + '</div>' +
+            '<div class="text-base font-extrabold text-emerald-700 mt-0.5">' + (selectedReqDev ? formatCLP(totalDevMes) : 'Solo registro') + '</div>' +
           '</div>' +
           '<div class="p-3 rounded-xl bg-rose-50/70 border border-rose-200">' +
-            '<div class="text-[10px] font-bold text-rose-900 uppercase">Pendiente Mes</div>' +
-            '<div class="text-base font-extrabold ' + (pendMes > 0 ? 'text-rose-700' : 'text-emerald-700') + ' mt-0.5">' + formatCLP(pendMes) + '</div>' +
+            '<div class="text-[10px] font-bold text-rose-900 uppercase">Por Devolver Mes</div>' +
+            '<div class="text-base font-extrabold ' + (selectedReqDev && totalPendMes > 0 ? 'text-rose-700' : 'text-emerald-700') + ' mt-0.5">' + (selectedReqDev ? formatCLP(totalPendMes) : '$0') + '</div>' +
           '</div>' +
           '<div class="p-3 rounded-xl bg-slate-50 border border-slate-200">' +
             '<div class="text-[10px] font-bold text-slate-600 uppercase">Total Año ' + activeYear + '</div>' +
             '<div class="text-base font-extrabold text-[#0A2558] mt-0.5">' + formatCLP(totalGastoYear) + '</div>' +
-            '<div class="text-[10px] text-slate-500">' + totalCountYear + ' movs • Pend: ' + formatCLP(pendYear) + '</div>' +
+            '<div class="text-[10px] text-slate-500">' + totalCountYear + ' movs' + (selectedReqDev ? (' • Pend: ' + formatCLP(totalPendYear)) : ' • Solo registro') + '</div>' +
           '</div>' +
         '</div>';
 
-      // Desglose por persona (siempre visible en vista Todas)
-      const activePeopleRows = Object.keys(perPersonMap)
+      const activePeopleRows = peopleNames
         .map(function(k) { return Object.assign({ nombre: k }, perPersonMap[k]); })
         .filter(function(r) { return r.gastoYear > 0 || r.devYear > 0; })
         .sort(function(a, b) { return b.gastoYear - a.gastoYear; });
@@ -6476,23 +6534,22 @@
           '<div class="space-y-2">' +
           activePeopleRows.map(function(r) {
             const pct = Math.round((r.gastoYear / sumAllPeopleYear) * 100);
-            const saldo = r.gastoYear - r.devYear;
+            const saldo = r.requiereDev ? Math.max(0, r.gastoYear - r.devYear) : 0;
+            const modeTag = r.requiereDev
+              ? '<span class="text-[10px] text-slate-500">Devuelto: <strong class="text-emerald-700">' + formatCLP(r.devYear) + '</strong></span><span class="text-[10px] text-slate-500">Por devolver: <strong class="' + (saldo > 0 ? 'text-rose-600' : 'text-emerald-700') + '">' + formatCLP(saldo) + '</strong></span>'
+              : '<span class="text-[10px] font-semibold text-indigo-700">📊 Solo registro (sin devolución)</span>';
             return '<div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">' +
               '<div class="flex items-center justify-between gap-2 text-xs">' +
                 '<span class="font-bold text-slate-800">' + escapeHtml(r.nombre) + ' <span class="text-[10px] font-semibold text-slate-500">(' + r.countYear + ' movs • ' + pct + '%)</span></span>' +
                 '<span class="font-extrabold text-slate-900">' + formatCLP(r.gastoYear) + '</span>' +
               '</div>' +
               '<div class="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden"><div class="h-full bg-[#0A2558] rounded-full" style="width:' + pct + '%"></div></div>' +
-              '<div class="flex items-center justify-between text-[10px] text-slate-500">' +
-                '<span>Devuelto: <strong class="text-emerald-700">' + formatCLP(r.devYear) + '</strong></span>' +
-                '<span>Pendiente anual: <strong class="' + (saldo > 0 ? 'text-rose-600' : 'text-emerald-700') + '">' + formatCLP(Math.max(0, saldo)) + '</strong></span>' +
-              '</div>' +
+              '<div class="flex items-center justify-between gap-2">' + modeTag + '</div>' +
             '</div>';
           }).join('') +
           '</div></div>';
       }
 
-      // Evolución mensual compacta + Top comercios personales
       const shortM = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
       const maxMonthGasto = Math.max(1, Math.max.apply(null, Object.keys(monthlyTotals).map(function(k) { return monthlyTotals[k].gasto; })));
       const monthBarsHtml = Object.keys(monthlyTotals).sort().map(function(mk, i) {
@@ -6533,7 +6590,6 @@
 
       contentHost.innerHTML = html;
     }
-
     function renderSpecificTab(tabId, aggObj) {
       const agg = aggObj || state._lastAggregates || computeAggregates();
       const curM = state.selectedMonth;
