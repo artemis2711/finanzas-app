@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="1.8.2" />
+  <meta name="app-build" content="1.8.3" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -805,6 +805,10 @@
       body:not(.force-mobile-view) #btnTogglePcMobileView { display: inline-flex !important; }
       body:not(.force-mobile-view) #btnExitForceMobileFloat { display: none !important; }
       body:not(.force-mobile-view) .matrix-window-bar { display: none !important; }
+      body:not(.force-mobile-view) #debtsTableCompactControls { display: none !important; }
+      body:not(.force-mobile-view):not(.on-home-tab):not(.on-config-tab) #topSummaryRibbonSection {
+        display: block !important;
+      }
 
       /* Encabezado azul compacto en 1 sola fila en PC (Mes/Año centrado entre marca y acciones) */
       body:not(.force-mobile-view):not(.on-home-tab) header > div:first-child {
@@ -5525,7 +5529,7 @@
     }
 
     function renderTopKpiDrilldown(b, curM) {
-      const panel = document.getElementById('homeKpiDrilldownPanel') || document.getElementById('topKpiDrilldownPanel');
+      const panel = (state.activeTab === 'tab-inicio' || !isDesktopWideMode()) ? (document.getElementById('homeKpiDrilldownPanel') || document.getElementById('topKpiDrilldownPanel')) : (document.getElementById('topKpiDrilldownPanel') || document.getElementById('homeKpiDrilldownPanel'));
       const gfBtn = document.getElementById('homeKpiGfBtn');
       const supBtn = document.getElementById('homeKpiSupBtn');
       const gfChev = document.getElementById('homeGfChevron');
@@ -7604,7 +7608,7 @@
       }
       // Ventana de últimos 3 meses fija al mes actual por defecto (expandible a todo el año)
       let mList = allMList;
-      if (!state._showAllMonthsDebts && allMList.length > 3) {
+      if (!isDesktopWideMode() && !state._showAllMonthsDebts && allMList.length > 3) {
         let anchorIdx = allMList.indexOf(CHILE_NOW.monthYMD);
         if (anchorIdx === -1) anchorIdx = allMList.length - 1;
         const endI = Math.max(2, anchorIdx);
@@ -7617,7 +7621,7 @@
       if (!state._debtsTablePersonFilter || (state._debtsTablePersonFilter !== 'ALL' && peoplePool.indexOf(state._debtsTablePersonFilter) === -1)) {
         state._debtsTablePersonFilter = (typeof window !== 'undefined' && window.innerWidth < 768 && peoplePool.length > 0) ? peoplePool[0] : 'ALL';
       }
-      const displayPeople = (state._debtsTablePersonFilter === 'ALL') ? peoplePool : [state._debtsTablePersonFilter];
+      const displayPeople = (isDesktopWideMode() || state._debtsTablePersonFilter === 'ALL') ? peoplePool : [state._debtsTablePersonFilter];
 
       let ctrlBar = document.getElementById('debtsTableCompactControls');
       const tableEl = thead ? thead.closest('table') : null;
@@ -8630,6 +8634,7 @@
         }
       });
       document.body.classList.toggle('on-home-tab', targetTabId === 'tab-inicio');
+      document.body.classList.toggle('on-config-tab', targetTabId === 'tab-config');
       renderNavigationBars();
     }
 
