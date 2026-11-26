@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="1.9.4" />
+  <meta name="app-build" content="1.9.7" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -869,6 +869,40 @@
         font-size: 1.35rem !important;
         line-height: 1.65rem !important;
       }
+
+      /* Balance Mensual en PC: cabecera horizontal equilibrada sin espacio vacío */
+      body:not(.force-mobile-view) #homeBalanceTopRow {
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 1rem !important;
+      }
+      body:not(.force-mobile-view) #homeBalanceHeaderCluster {
+        order: 1 !important;
+        flex: 0 0 auto;
+      }
+      body:not(.force-mobile-view) #homeSaldoCluster {
+        order: 2 !important;
+        width: auto !important;
+        flex: 1 1 auto;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 1.5rem !important;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        border-left: 1px solid #E2E8F0;
+        border-right: 1px solid #E2E8F0;
+      }
+      body:not(.force-mobile-view) #homeBalanceMobileRegBtn {
+        order: 3 !important;
+        flex: 0 0 auto;
+      }
+      body:not(.force-mobile-view) .home-pc-only-btn {
+        display: inline-flex !important;
+      }
+      body:not(.force-mobile-view) #homePcBudgetPill {
+        display: inline-flex !important;
+      }
       body:not(.force-mobile-view):not(.on-home-tab):not(.on-config-tab) #topSummaryRibbonSection {
         display: block !important;
       }
@@ -995,7 +1029,7 @@
 
   <!-- TOP HEADER -->
   <header class="bg-gradient-to-r from-[#0A2558] via-[#0F2F6B] to-[#133878] text-white sticky top-0 z-30 shadow-md">
-    <div class="max-w-7xl mx-auto px-3.5 sm:px-4 pt-2 pb-1.5 space-y-1.5 border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 pt-2 pb-1.5 space-y-1.5 border-b border-white/10">
       <!-- Fila 1: Identidad bancaria + Acciones rápidas (Ojo privacidad, Campana, Menú) -->
       <div id="headerTopRow" class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
@@ -1144,8 +1178,8 @@
       <!-- Tarjeta Principal de Balance estilo Banco de Chile -->
       <div id="homeBalanceCard" class="bg-white rounded-3xl shadow-md border border-slate-200/80 overflow-hidden">
         <div class="p-4 sm:p-5 space-y-4">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
+          <div id="homeBalanceTopRow" class="flex flex-wrap items-center justify-between gap-y-3 gap-x-2">
+            <div id="homeBalanceHeaderCluster" class="flex items-center gap-2.5 min-w-0 order-1">
               <div class="w-1.5 h-8 rounded-full bg-[#0A2558] shrink-0"></div>
               <div class="min-w-0">
                 <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Balance Mensual</div>
@@ -1179,14 +1213,23 @@
                 </div>
               </div>
             </div>
-            <button type="button" data-home-go="tab-registro" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#0A2558] hover:bg-[#133878] active:scale-95 text-white text-xs font-bold shadow-sm transition">
-              <span>＋</span> <span>Registrar</span>
-            </button>
-          </div>
 
-          <div>
-            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Saldo Disponible</div>
-            <div id="homeSaldoMes" class="text-3xl font-extrabold tracking-tight text-slate-900 mt-0.5">$0</div>
+            <div id="homeBalanceMobileRegBtn" class="flex items-center gap-2 shrink-0 order-2">
+              <button type="button" data-home-go="tab-importar" class="home-pc-only-btn hidden items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 text-[#0A2558] border border-slate-200 text-xs font-bold transition">
+                <span>📄</span> <span>Autoregistro</span>
+              </button>
+              <button type="button" data-home-go="tab-registro" class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#0A2558] hover:bg-[#133878] active:scale-95 text-white text-xs font-bold shadow-sm transition">
+                <span>＋</span> <span>Registrar</span>
+              </button>
+            </div>
+
+            <div id="homeSaldoCluster" class="w-full flex items-baseline justify-between gap-4 order-3">
+              <div>
+                <div class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Saldo Disponible</div>
+                <div id="homeSaldoMes" class="text-3xl font-extrabold tracking-tight text-slate-900 mt-0.5">$0</div>
+              </div>
+              <div id="homePcBudgetPill" class="hidden items-center gap-3 px-3.5 py-1.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px]"></div>
+            </div>
           </div>
 
           <!-- Grid 3 KPIs esenciales: Gastos Fijos (desplegable), Supermercado (desplegable) y Gastos Personales -->
@@ -17472,6 +17515,19 @@
       if (!cfStrip || !cardsHost || !recentHost || !catsHost || !persHost) return;
 
       const fmtVal = function(v) { return masked ? '$•••••' : formatCLP(v); };
+
+      // 0. Resumen rápido de presupuesto dentro de Balance Mensual (solo PC)
+      const budPill = document.getElementById('homePcBudgetPill');
+      if (budPill && b) {
+        const presTot = Number(b.pres_gf || 0) + Number(b.pres_sup || 0);
+        const gastTot = Number(b.gf || 0) + Number(b.sup || 0);
+        const pctUsed = presTot > 0 ? Math.round((gastTot / presTot) * 100) : 0;
+        const pctCls = pctUsed > 100 ? 'text-rose-600' : (pctUsed >= 85 ? 'text-amber-700' : 'text-emerald-700');
+        budPill.innerHTML =
+          '<div class="text-right"><div class="text-[10px] font-bold uppercase text-slate-400">Presupuesto Mes</div><div class="font-extrabold text-slate-800">' + fmtVal(presTot) + '</div></div>' +
+          '<div class="w-px h-6 bg-slate-200"></div>' +
+          '<div class="text-right"><div class="text-[10px] font-bold uppercase text-slate-400">Consumido</div><div class="font-extrabold ' + pctCls + '">' + fmtVal(gastTot) + ' <span class="text-[10px] font-bold">(' + pctUsed + '%)</span></div></div>';
+      }
 
       // 1. Franja de Flujo de Caja del mes activo
       const cf = (typeof computeCashFlowForMonthBucket === 'function')
