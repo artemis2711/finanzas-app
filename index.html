@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.3.3" />
+  <meta name="app-build" content="2.3.5" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -2181,7 +2181,7 @@
     <!-- TAB: AHORROS Y FONDOS DE RESERVA                                    -->
     <!-- =================================================================== -->
     <section id="tab-ahorros" class="tab-panel hidden space-y-6">
-      <div id="grid-tab-ahorros" class="subsec-grid-container space-y-6 lg:space-y-0">
+      <div id="grid-tab-ahorros" class="subsec-grid-container space-y-6 lg:space-y-0 items-start">
       <!-- Encabezado y KPIs de Ahorros -->
       <div id="subsec-sav-kpis" data-subsec-item class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
@@ -2252,7 +2252,7 @@
       </div>
 
       <!-- Fila Central: Categorías de Ahorro + Formulario de Registro + Desglose -->
-      <div id="subsec-sav-central" data-subsec-item class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div id="subsec-sav-central" data-subsec-item class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <!-- Izquierda: Crear Categorías y Registrar Ahorro/Retiro -->
         <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
           <div class="border-b border-slate-100 pb-2.5">
@@ -2263,14 +2263,16 @@
           <!-- Formulario para crear nueva Categoría de Ahorro -->
           <form id="addSavingsCategoryForm" class="p-3 rounded-xl bg-sky-50/70 border border-sky-200 space-y-2">
             <label class="block text-[11px] font-bold text-sky-950 uppercase">➕ Crear y Administrar Bolsillos de Ahorro</label>
-            <div class="flex flex-wrap sm:flex-nowrap gap-2">
-              <input type="text" id="newSavCatNameInput" placeholder="Ej: Pie de Casa, Vacaciones, Fondo personal..." required class="flex-1 min-w-[160px] rounded-xl border border-sky-300 px-3 py-1.5 text-xs bg-white font-semibold text-slate-800" />
-              <select id="newSavCatOwnerSelect" title="Titular del bolsillo" class="rounded-xl border border-sky-300 px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800">
-                <option value="Presupuesto">🤝 Compartido</option>
-              </select>
-              <button type="submit" class="px-3 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold transition shadow-sm whitespace-nowrap">
-                + Crear
-              </button>
+            <div class="space-y-2">
+              <input type="text" id="newSavCatNameInput" placeholder="Ej: Pie de Casa, Vacaciones, Fondo personal..." required class="w-full rounded-xl border border-sky-300 px-3 py-1.5 text-xs bg-white font-semibold text-slate-800" />
+              <div class="flex items-center gap-2">
+                <select id="newSavCatOwnerSelect" title="Titular del bolsillo" class="flex-1 min-w-0 rounded-xl border border-sky-300 px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800">
+                  <option value="Presupuesto">🤝 Compartido</option>
+                </select>
+                <button type="submit" class="shrink-0 px-3.5 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold transition shadow-sm whitespace-nowrap">
+                  + Crear
+                </button>
+              </div>
             </div>
             <div id="savingsCategoriesPills" class="flex flex-wrap gap-1.5 pt-1"></div>
           </form>
@@ -2338,51 +2340,45 @@
           </div>
         </div>
 
-        <!-- Derecha: Desglose por Categoría y Cuenta -->
+        <!-- Derecha: Bolsillos y Resumen Mensual de Ahorros -->
         <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
           <div class="border-b border-slate-100 pb-2.5 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 class="text-sm md:text-base font-bold text-slate-900">📊 Desglose por Categoría de Ahorro y Cuenta</h3>
-              
+              <h3 class="text-sm md:text-base font-bold text-slate-900">📊 Desglose por Bolsillo y Resumen Mensual</h3>
             </div>
           </div>
           <div id="savingsPocketsContainer" class="space-y-2.5"></div>
-          <div class="pt-3 border-t border-slate-100">
-            <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">💳 Distribución por Cuenta / Tarjeta y Persona</h4>
-            <div id="savingsByAccountContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+          <div id="savingsByAccountContainer" class="hidden"></div>
+          <div class="pt-3 border-t border-slate-100 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h4 id="savYearlyTableTitle" class="text-xs font-bold text-slate-700 uppercase">📅 Resumen Mensual de Ahorros (2026)</h4>
+              <button type="button" id="btnToggleSavAllMonths" class="md:hidden px-2.5 py-1 rounded-lg bg-[#1B365D] text-white text-[11px] font-bold whitespace-nowrap">◀ Ver 12 meses</button>
+            </div>
+            <!-- Vista tarjetas compactas en móvil (sin scroll horizontal) -->
+            <div id="savMonthlyCardsList" class="space-y-2 md:hidden"></div>
+            <!-- Vista tabla completa 12 meses en escritorio sin scroll horizontal -->
+            <div id="savMonthlyTableWrap" class="hidden md:block border border-slate-200 rounded-xl overflow-hidden">
+              <table class="w-full table-fixed text-[11px] text-left border-collapse tabular-nums">
+                <thead class="bg-[#1B365D] text-white uppercase text-[10px]">
+                  <tr>
+                    <th class="w-[13%] px-2 py-2">Mes</th>
+                    <th class="w-[15%] px-1.5 py-2 text-right">Aportes</th>
+                    <th class="w-[13%] px-1.5 py-2 text-right">Retiros</th>
+                    <th class="w-[15%] px-1.5 py-2 text-right">Neto</th>
+                    <th class="w-[14%] px-1.5 py-2 text-right">Meta</th>
+                    <th class="w-[12%] px-1 py-2 text-center">Cumpl.</th>
+                    <th class="w-[18%] px-2 py-2 text-right">Acumulado</th>
+                  </tr>
+                </thead>
+                <tbody id="savMonthlyTableBody" class="divide-y divide-slate-200"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Resumen Mensual de Evolución de Ahorros (Tarjetas móviles sin scroll + Tabla escritorio) -->
-      <div id="subsec-sav-yearly" data-subsec-item class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-          <div>
-            <h3 id="savYearlyTableTitle" class="text-sm md:text-base font-bold text-slate-900">📅 Resumen Mensual de Ahorros en Bolsillos (2026)</h3>
-            
-          </div>
-          <button type="button" id="btnToggleSavAllMonths" class="px-2.5 py-1 rounded-lg bg-[#1B365D] text-white text-[11px] font-bold whitespace-nowrap">◀ Ver 12 meses</button>
-        </div>
-        <!-- Vista tarjetas compactas (sin scroll horizontal) -->
-        <div id="savMonthlyCardsList" class="space-y-2 md:hidden"></div>
-        <!-- Vista tabla completa en escritorio -->
-        <div class="hidden md:block overflow-x-auto border border-slate-200 rounded-xl">
-          <table class="w-full text-xs text-left border-collapse">
-            <thead class="bg-[#1B365D] text-white uppercase text-[11px]">
-              <tr>
-                <th class="p-2.5">Mes</th>
-                <th class="p-2.5 text-right">Aportes (+$)</th>
-                <th class="p-2.5 text-right">Retiros (-$)</th>
-                <th class="p-2.5 text-right">Ahorro Neto</th>
-                <th class="p-2.5 text-right">Meta Mensual</th>
-                <th class="p-2.5 text-center">Cumplimiento</th>
-                <th class="p-2.5 text-right">Fondo Acumulado</th>
-              </tr>
-            </thead>
-            <tbody id="savMonthlyTableBody" class="divide-y divide-slate-200"></tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Contenedor preservado para compatibilidad de layout (el resumen mensual ahora vive dentro de la tarjeta derecha) -->
+      <div id="subsec-sav-yearly" class="hidden" style="display:none !important;"></div>
 
       <!-- Historial Detallado de Movimientos de Ahorro -->
       <div id="subsec-sav-history" data-subsec-item class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
@@ -3659,7 +3655,7 @@
       // Subsecciones de Ahorros
       { id: 'subsec-sav-kpis', tabId: 'tab-ahorros', label: 'Resumen y KPIs de Ahorros', enabled: true, x: 0, y: 0, w: 12, h: 2, tipo: 'cifra', etiqueta: '4 KPIs', min: [4, 2] },
       { id: 'subsec-sav-central', tabId: 'tab-ahorros', label: 'Categorías, Registro Manual y Desglose de Bolsillos', enabled: true, x: 0, y: 2, w: 12, h: 4, tipo: 'anillo', etiqueta: 'Bolsillos', min: [4, 2] },
-      { id: 'subsec-sav-yearly', tabId: 'tab-ahorros', label: 'Resumen Mensual de Ahorros (12 Meses)', enabled: true, x: 0, y: 6, w: 12, h: 3, tipo: 'barras', etiqueta: 'Evolución anual', min: [4, 2] },
+      { id: 'subsec-sav-yearly', tabId: 'tab-ahorros', label: 'Resumen Mensual de Ahorros (integrado)', enabled: false, x: 0, y: 6, w: 12, h: 3, tipo: 'barras', etiqueta: 'Evolución anual', min: [4, 2] },
       { id: 'subsec-sav-history', tabId: 'tab-ahorros', label: 'Historial de Movimientos de Ahorro', enabled: true, x: 0, y: 9, w: 12, h: 3, tipo: 'lista', etiqueta: 'Aportes y retiros', min: [4, 2] },
       // Subsecciones de Gastos Personales
       { id: 'subsec-deudas-cards', tabId: 'tab-deudas', label: 'Tarjetas de Deuda del Mes Activo por Persona', enabled: true, x: 0, y: 0, w: 12, h: 3, tipo: 'anillo', etiqueta: 'Integrantes', min: [4, 2] },
@@ -8778,8 +8774,9 @@
 
       // Tabla anual mes a mes
       const yTitleEl = document.getElementById('savYearlyTableTitle');
-      if (yTitleEl) yTitleEl.textContent = '📅 Resumen Mensual de Ahorros en Bolsillos (' + activeY + ')';
+      if (yTitleEl) yTitleEl.textContent = '📅 Resumen Mensual de Ahorros (' + activeY + ')';
       const monthNamesFull = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const monthNamesShort = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       const savMonthlyBody = document.getElementById('savMonthlyTableBody');
       if (savMonthlyBody) {
         let runningCumulative = initBal;
@@ -8811,15 +8808,20 @@
             m: m, mKey: mKey, mb: mb, cum: runningCumulative, isCur: isCur, pctM: pctM, statusBadge: statusBadge
           });
 
+          const compactBadge = mb.ahorro_neto <= 0
+            ? '<span class="text-slate-400 text-[10px]">—</span>'
+            : (monthlyGoal > 0 && mb.ahorro_neto >= monthlyGoal
+                ? '<span class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">✓' + pctM + '%</span>'
+                : '<span class="px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-800 font-semibold text-[10px]">' + (monthlyGoal > 0 ? (pctM + '%') : 'OK') + '</span>');
           rowsHtml.push(
             '<tr data-select-month="' + mKey + '" class="budget-month-col cursor-pointer transition ' + (isCur ? 'bg-sky-50/80 font-semibold' : 'hover:bg-slate-50') + '">' +
-              '<td class="p-2.5">' + monthNamesFull[m] + ' ' + activeY + (isCur ? ' <span class="text-[10px] bg-sky-700 text-white px-1.5 py-0.5 rounded ml-1 font-bold">Activo</span>' : '') + '</td>' +
-              '<td class="p-2.5 text-right text-emerald-700">' + (mb.ahorro_aportes > 0 ? ('+' + formatCLP(mb.ahorro_aportes)) : '$0') + '</td>' +
-              '<td class="p-2.5 text-right text-rose-600">' + (mb.ahorro_retiros > 0 ? ('-' + formatCLP(mb.ahorro_retiros)) : '$0') + '</td>' +
-              '<td class="p-2.5 text-right font-bold ' + (mb.ahorro_neto > 0 ? 'text-sky-900' : (mb.ahorro_neto < 0 ? 'text-rose-600' : 'text-slate-400')) + '">' + formatCLP(mb.ahorro_neto) + '</td>' +
-              '<td class="p-2.5 text-right text-slate-500">' + formatCLP(monthlyGoal) + '</td>' +
-              '<td class="p-2.5 text-center">' + statusBadge + '</td>' +
-              '<td class="p-2.5 text-right font-bold text-slate-900">' + formatCLP(runningCumulative) + '</td>' +
+              '<td class="px-2 py-1.5 whitespace-nowrap font-semibold text-slate-800">' + monthNamesShort[m] + (isCur ? ' <span class="inline-block w-1.5 h-1.5 rounded-full bg-sky-600 align-middle ml-0.5" title="Mes activo"></span>' : '') + '</td>' +
+              '<td class="px-1.5 py-1.5 text-right whitespace-nowrap text-emerald-700">' + (mb.ahorro_aportes > 0 ? ('+' + formatCLP(mb.ahorro_aportes)) : '$0') + '</td>' +
+              '<td class="px-1.5 py-1.5 text-right whitespace-nowrap text-rose-600">' + (mb.ahorro_retiros > 0 ? ('-' + formatCLP(mb.ahorro_retiros)) : '$0') + '</td>' +
+              '<td class="px-1.5 py-1.5 text-right whitespace-nowrap font-bold ' + (mb.ahorro_neto > 0 ? 'text-sky-900' : (mb.ahorro_neto < 0 ? 'text-rose-600' : 'text-slate-400')) + '">' + formatCLP(mb.ahorro_neto) + '</td>' +
+              '<td class="px-1.5 py-1.5 text-right whitespace-nowrap text-slate-500">' + formatCLP(monthlyGoal) + '</td>' +
+              '<td class="px-1 py-1.5 text-center whitespace-nowrap">' + compactBadge + '</td>' +
+              '<td class="px-2 py-1.5 text-right whitespace-nowrap font-bold text-slate-900">' + formatCLP(runningCumulative) + '</td>' +
             '</tr>'
           );
         }
