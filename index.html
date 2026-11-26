@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.4.2" />
+  <meta name="app-build" content="2.4.3" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y correccion de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -13706,7 +13706,7 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, w, h);
                 ctx.drawImage(img, 0, 0, w, h);
-                const out = c.toDataURL('image/jpeg', 0.85);
+                const out = c.toDataURL('image/jpeg', 0.80);
                 resolve({ mimeType: 'image/jpeg', base64: out.split(',')[1] || '' });
               } catch (_e) {
                 resolve({ mimeType: 'image/jpeg', base64: (dataUrl.split(',')[1] || '') });
@@ -13752,13 +13752,14 @@
         try {
           const resp = await fetch(auth.url + '/functions/v1/parse-movements', {
             method: 'POST',
+            mode: 'cors',
             signal: ctrl ? ctrl.signal : undefined,
             headers: {
-              'Authorization': 'Bearer ' + auth.token,
-              'apikey': auth.apikey,
-              'Content-Type': 'application/json'
+              'Content-Type': 'text/plain;charset=UTF-8'
             },
             body: JSON.stringify({
+              access_token: auth.token,
+              apikey: auth.apikey,
               mimeType: payload.mimeType,
               base64: payload.base64,
               fileName: payload.fileName || '',
@@ -13914,7 +13915,7 @@
             if (isAiImportEnabled()) {
               const badge = document.getElementById('ocrStatusBadge');
               if (badge) badge.textContent = 'Analizando imagen con IA...';
-              const compressed = await compressImageDataUrlForAi(evt.target.result, 1600);
+              const compressed = await compressImageDataUrlForAi(evt.target.result, 1280);
               const aiRes = await tryParseWithSupabaseAi({
                 mimeType: compressed.mimeType,
                 base64: compressed.base64,
