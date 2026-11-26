@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="1.9.7" />
-  <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
+  <meta name="app-build" content="2.0.0" />
+  <meta name="app-notes" content="Nuevo: respaldo online y sincronización multidispositivo por cuenta de usuario en Configuración, manteniendo intacto el modo offline y Google Sheets." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -2613,6 +2613,49 @@
           </section>
 
           <p class="pa-oculto" role="status" aria-live="polite" data-vivo></p>
+        </div>
+      </div>
+      <div id="subsec-cfg-supabase" class="bg-white rounded-2xl shadow-sm border border-teal-200/90 p-4 sm:p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-base font-bold text-slate-900">🌐 Cuenta en la Nube (Respaldo Online)</h2>
+          <span id="sbStatusPill" class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">Sin sesión</span>
+        </div>
+
+        <!-- Vista sin sesión: Iniciar sesión / Crear cuenta -->
+        <div id="sbAuthFormBox" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="sbEmailInput" class="block text-xs font-bold text-slate-700 mb-1">Correo electrónico</label>
+              <input type="email" id="sbEmailInput" autocomplete="email" placeholder="tu@correo.com" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-teal-600" />
+            </div>
+            <div>
+              <label for="sbPasswordInput" class="block text-xs font-bold text-slate-700 mb-1">Contraseña (mín. 6 caracteres)</label>
+              <input type="password" id="sbPasswordInput" autocomplete="current-password" placeholder="••••••••" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-teal-600" />
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="btnSbSignIn" class="px-4 py-2 rounded-xl bg-[#0A2558] hover:bg-[#133878] text-white text-xs font-bold shadow-sm transition">🔐 Iniciar sesión</button>
+            <button type="button" id="btnSbSignUp" class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold shadow-sm transition">✨ Crear cuenta gratis</button>
+          </div>
+          <p id="sbAuthMsg" class="text-xs text-slate-500 hidden"></p>
+        </div>
+
+        <!-- Vista con sesión activa: Estado y controles de sincronización -->
+        <div id="sbLoggedInBox" class="hidden space-y-3">
+          <div class="p-3 rounded-xl bg-teal-50/70 border border-teal-200 flex flex-wrap items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div class="text-xs font-extrabold text-teal-950 truncate" id="sbUserEmailText">usuario@correo.com</div>
+              <div class="text-[11px] text-teal-800" id="sbLastSyncText">Última sincronización: Pendiente</div>
+            </div>
+            <button type="button" id="btnSbSignOut" class="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold transition">🚪 Cerrar sesión</button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="btnSbSyncNow" class="px-3.5 py-2 rounded-xl bg-teal-700 hover:bg-teal-600 text-white text-xs font-bold shadow-sm transition">🔄 Sincronizar ahora</button>
+            <button type="button" id="btnSbPushAll" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold transition">📤 Subir respaldo local a la nube</button>
+            <button type="button" id="btnSbPullAll" class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-xs font-bold transition">♻️ Restaurar desde la nube</button>
+          </div>
+          <p id="sbSyncLogText" class="text-[11px] text-slate-500"></p>
         </div>
       </div>
       <div id="subsec-cfg-sync" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
@@ -16121,7 +16164,8 @@
         cardEl.appendChild(bodyWrap);
       }
 
-      makeCardCollapsible(document.getElementById('subsec-cfg-sync'), '☁️ Sincronización Multi-Dispositivo');
+      makeCardCollapsible(document.getElementById('subsec-cfg-supabase'), '🌐 Cuenta en la Nube (Respaldo Online)');
+      makeCardCollapsible(document.getElementById('subsec-cfg-sync'), '☁️ Sincronización Multi-Dispositivo (Apps Script)');
 
       // 1. Plegar el Organizador de Subsecciones inline en Configuración
       const parrillaSlot = document.getElementById('parrillaInlineSlot');
@@ -18663,6 +18707,558 @@
     } else {
       initMultiDeviceSyncUI();
     }
+
+    // =========================================================================
+    // MOTOR DE CUENTAS Y RESPALDO ONLINE MULTIDISPOSITIVO (SUPABASE)
+    // =========================================================================
+    (function initSupabaseCloudSyncModule() {
+      const SB_URL = 'https://mebvxdvjzhzbudxesrld.supabase.co';
+      const SB_KEY = 'sb_publishable_MBe0-bFr66bp55hZqYnaiA_eJJvv9n3';
+      const SB_SESSION_KEY = 'ff_sb_auth_session_v1';
+      const SB_META_KEY = 'ff_sb_sync_meta_v1';
+      const SB_CONFIG_KEYS = [
+        'cards', 'categories', 'budgetAmounts', 'savingsConfig',
+        'personalPeople', 'quickButtons', 'tabsConfig', 'subsectionsConfig', 'deletedRegistry'
+      ];
+
+      let _sbSyncInFlight = false;
+      let _sbDebounceTimer = null;
+
+      function getSbSession() {
+        try {
+          const raw = localStorage.getItem(SB_SESSION_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch (_e) { return null; }
+      }
+      function saveSbSession(sess) {
+        try {
+          if (!sess) localStorage.removeItem(SB_SESSION_KEY);
+          else localStorage.setItem(SB_SESSION_KEY, JSON.stringify(sess));
+        } catch (_e) {}
+      }
+      function getSbMeta() {
+        try {
+          const raw = localStorage.getItem(SB_META_KEY);
+          const parsed = raw ? JSON.parse(raw) : {};
+          return Object.assign({ lastSyncTs: 0, configTimestamps: {} }, parsed || {});
+        } catch (_e) { return { lastSyncTs: 0, configTimestamps: {} }; }
+      }
+      function saveSbMeta(meta) {
+        try { localStorage.setItem(SB_META_KEY, JSON.stringify(meta || {})); } catch (_e) {}
+      }
+
+      function setSbAuthMessage(msg, isErr) {
+        const el = document.getElementById('sbAuthMsg');
+        if (!el) return;
+        if (!msg) { el.classList.add('hidden'); el.textContent = ''; return; }
+        el.textContent = msg;
+        el.className = 'text-xs font-semibold ' + (isErr ? 'text-rose-600' : 'text-teal-700');
+        el.classList.remove('hidden');
+      }
+
+      function updateSupabaseUI(statusNote) {
+        const sess = getSbSession();
+        const pill = document.getElementById('sbStatusPill');
+        const authBox = document.getElementById('sbAuthFormBox');
+        const loggedBox = document.getElementById('sbLoggedInBox');
+        const emailEl = document.getElementById('sbUserEmailText');
+        const lastEl = document.getElementById('sbLastSyncText');
+        const logEl = document.getElementById('sbSyncLogText');
+        const meta = getSbMeta();
+
+        if (sess && sess.access_token && sess.user && sess.user.id) {
+          if (authBox) authBox.classList.add('hidden');
+          if (loggedBox) loggedBox.classList.remove('hidden');
+          if (emailEl) emailEl.textContent = sess.user.email || 'Cuenta conectada';
+          if (pill) {
+            pill.textContent = _sbSyncInFlight ? '🔄 Sincronizando...' : '● Conectado';
+            pill.className = 'text-[11px] font-bold px-2.5 py-1 rounded-full border ' +
+              (_sbSyncInFlight ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200');
+          }
+          if (lastEl) {
+            const ts = Number(meta.lastSyncTs || 0);
+            lastEl.textContent = ts > 0
+              ? ('Última sincronización: ' + new Date(ts).toLocaleString('es-CL'))
+              : 'Última sincronización: Aún pendiente';
+          }
+          if (logEl && statusNote) logEl.textContent = statusNote;
+        } else {
+          if (authBox) authBox.classList.remove('hidden');
+          if (loggedBox) loggedBox.classList.add('hidden');
+          if (pill) {
+            pill.textContent = 'Sin sesión';
+            pill.className = 'text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200';
+          }
+        }
+      }
+
+      async function sbAuthFetch(path, bodyObj) {
+        const resp = await fetch(SB_URL + path, {
+          method: 'POST',
+          headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyObj || {})
+        });
+        const data = await resp.json().catch(function() { return {}; });
+        if (!resp.ok) {
+          const rawErr = data.msg || data.error_description || data.error || ('Error HTTP ' + resp.status);
+          throw new Error(rawErr);
+        }
+        return data;
+      }
+
+      async function ensureValidSbSession() {
+        let sess = getSbSession();
+        if (!sess || !sess.access_token) return null;
+        const nowSec = Math.floor(Date.now() / 1000);
+        const expSec = Number(sess.expires_at || 0);
+        if (expSec > 0 && (expSec - nowSec) < 300 && sess.refresh_token) {
+          try {
+            const refreshed = await sbAuthFetch('/auth/v1/token?grant_type=refresh_token', { refresh_token: sess.refresh_token });
+            if (refreshed && refreshed.access_token) {
+              sess = {
+                access_token: refreshed.access_token,
+                refresh_token: refreshed.refresh_token || sess.refresh_token,
+                expires_at: refreshed.expires_at || (Math.floor(Date.now() / 1000) + Number(refreshed.expires_in || 3600)),
+                user: refreshed.user || sess.user
+              };
+              saveSbSession(sess);
+            }
+          } catch (_e) {}
+        }
+        return sess;
+      }
+
+      async function sbRestFetch(path, options) {
+        const sess = await ensureValidSbSession();
+        if (!sess || !sess.access_token) throw new Error('Sesión no iniciada');
+        const opts = options || {};
+        const headers = Object.assign({
+          'apikey': SB_KEY,
+          'Authorization': 'Bearer ' + sess.access_token,
+          'Content-Type': 'application/json'
+        }, opts.headers || {});
+        const resp = await fetch(SB_URL + '/rest/v1/' + path, {
+          method: opts.method || 'GET',
+          headers: headers,
+          body: opts.body ? JSON.stringify(opts.body) : undefined
+        });
+        if (!resp.ok) {
+          const txt = await resp.text().catch(function() { return ''; });
+          throw new Error('Error Supabase (' + resp.status + '): ' + txt.slice(0, 160));
+        }
+        if (resp.status === 204) return null;
+        const txt = await resp.text();
+        return txt ? JSON.parse(txt) : null;
+      }
+
+      async function pushChunksToSupabase(rows) {
+        const CHUNK = 150;
+        for (let i = 0; i < rows.length; i += CHUNK) {
+          const slice = rows.slice(i, i + CHUNK);
+          await sbRestFetch('user_movements?on_conflict=user_id,id_movimiento', {
+            method: 'POST',
+            headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+            body: slice
+          });
+        }
+      }
+
+      async function pushConfigBlocksToSupabase(userId, nowTs) {
+        const cfgRows = [];
+        SB_CONFIG_KEYS.forEach(function(k) {
+          if (state[k] !== undefined) {
+            cfgRows.push({
+              user_id: userId,
+              block_key: k,
+              block_value: state[k],
+              updated_at_ms: nowTs
+            });
+          }
+        });
+        if (cfgRows.length) {
+          await sbRestFetch('user_config_blocks?on_conflict=user_id,block_key', {
+            method: 'POST',
+            headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+            body: cfgRows
+          });
+        }
+      }
+
+      async function runSupabaseSync(mode) {
+        // mode: 'merge' (default) | 'push_all' | 'pull_all'
+        const syncMode = mode || 'merge';
+        if (_sbSyncInFlight) return;
+        const sess = await ensureValidSbSession();
+        if (!sess || !sess.user || !sess.user.id) return;
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          updateSupabaseUI('Sin conexión a internet (tus datos siguen seguros localmente).');
+          return;
+        }
+
+        _sbSyncInFlight = true;
+        updateSupabaseUI('Sincronizando con tu cuenta en la nube...');
+        const userId = sess.user.id;
+        const nowTs = Date.now();
+        const beforeDigest = (typeof buildSyncVisualDigest === 'function') ? buildSyncVisualDigest() : '';
+
+        try {
+          if (syncMode === 'push_all') {
+            const localMovs = Array.isArray(state.movimientos) ? state.movimientos : [];
+            const rowsToPush = localMovs.map(function(m) {
+              const id = String(m.id_movimiento || '').trim();
+              if (!id) return null;
+              const ts = Number(m.updated_at_ms || nowTs);
+              return { user_id: userId, id_movimiento: id, data: m, updated_at_ms: ts, deleted: false };
+            }).filter(Boolean);
+            // También marcar tombstones borrados
+            const delIds = (state.deletedRegistry && state.deletedRegistry.ids) ? state.deletedRegistry.ids : {};
+            const liveSet = new Set(rowsToPush.map(function(r) { return r.id_movimiento; }));
+            Object.keys(delIds).forEach(function(did) {
+              const ts = Number(delIds[did] || 0);
+              if (ts > 0 && !liveSet.has(did)) {
+                rowsToPush.push({ user_id: userId, id_movimiento: did, data: { id_movimiento: did }, updated_at_ms: ts, deleted: true });
+              }
+            });
+            await pushChunksToSupabase(rowsToPush);
+            await pushConfigBlocksToSupabase(userId, nowTs);
+            const meta = getSbMeta();
+            meta.lastSyncTs = nowTs;
+            saveSbMeta(meta);
+            updateSupabaseUI('Respaldo completo subido (' + localMovs.length + ' movimientos).');
+            if (typeof showToast === 'function') showToast('Respaldo subido a tu cuenta (' + localMovs.length + ' movs).', '☁️');
+            return;
+          }
+
+          // Descargar estado actual desde Supabase (movimientos + configuración)
+          const remoteMovRows = (await sbRestFetch('user_movements?select=id_movimiento,data,updated_at_ms,deleted&limit=10000')) || [];
+          const remoteCfgRows = (await sbRestFetch('user_config_blocks?select=block_key,block_value,updated_at_ms')) || [];
+
+          if (syncMode === 'pull_all') {
+            window.__IS_APPLYING_REMOTE_SYNC__ = true;
+            try {
+              const pulledMovs = [];
+              remoteMovRows.forEach(function(r) {
+                if (r && !r.deleted && r.data && r.id_movimiento) {
+                  const obj = Object.assign({}, r.data);
+                  obj.id_movimiento = r.id_movimiento;
+                  obj.updated_at_ms = Number(r.updated_at_ms || obj.updated_at_ms || nowTs);
+                  pulledMovs.push(obj);
+                }
+              });
+              state.movimientos = pulledMovs;
+              remoteCfgRows.forEach(function(rc) {
+                if (rc && SB_CONFIG_KEYS.indexOf(rc.block_key) !== -1 && rc.block_value !== undefined) {
+                  state[rc.block_key] = rc.block_value;
+                }
+              });
+            } finally {
+              window.__IS_APPLYING_REMOTE_SYNC__ = false;
+            }
+            if (typeof flushLocalStorageStateNow === 'function') flushLocalStorageStateNow();
+            if (typeof renderDropdowns === 'function') renderDropdowns();
+            if (typeof renderAllViews === 'function') renderAllViews(true);
+            const meta = getSbMeta();
+            meta.lastSyncTs = nowTs;
+            saveSbMeta(meta);
+            updateSupabaseUI('Datos restaurados desde la nube (' + state.movimientos.length + ' movimientos).');
+            if (typeof showToast === 'function') showToast('Cuenta restaurada (' + state.movimientos.length + ' movs).', '♻️');
+            return;
+          }
+
+          // Modo 'merge': fusión bidireccional inteligente por id_movimiento + updated_at_ms + deleted
+          const remoteMap = {};
+          remoteMovRows.forEach(function(r) {
+            if (r && r.id_movimiento) remoteMap[String(r.id_movimiento).trim()] = r;
+          });
+          const localMap = {};
+          (Array.isArray(state.movimientos) ? state.movimientos : []).forEach(function(m) {
+            if (m && m.id_movimiento) localMap[String(m.id_movimiento).trim()] = m;
+          });
+          const localDelIds = (state.deletedRegistry && state.deletedRegistry.ids) ? state.deletedRegistry.ids : {};
+
+          const allIds = new Set(Object.keys(remoteMap).concat(Object.keys(localMap)).concat(Object.keys(localDelIds)));
+          const mergedList = [];
+          const toPushUpsert = [];
+
+          allIds.forEach(function(id) {
+            const loc = localMap[id];
+            const rem = remoteMap[id];
+            const locDelTs = Number(localDelIds[id] || 0);
+            const locTs = loc ? Number(loc.updated_at_ms || 1) : 0;
+            const remTs = rem ? Number(rem.updated_at_ms || 1) : 0;
+
+            // 1. Borrado local explícito más reciente que el registro remoto
+            if (!loc && locDelTs > 0) {
+              if (!rem || (!rem.deleted && locDelTs >= remTs)) {
+                toPushUpsert.push({ user_id: userId, id_movimiento: id, data: { id_movimiento: id }, updated_at_ms: locDelTs, deleted: true });
+              } else if (rem && !rem.deleted && remTs > locDelTs) {
+                mergedList.push(Object.assign({}, rem.data, { id_movimiento: id, updated_at_ms: remTs }));
+              }
+              return;
+            }
+            // 2. Solo existe en local -> mantener y subir a nube
+            if (loc && !rem) {
+              const effTs = locTs > 1 ? locTs : nowTs;
+              loc.updated_at_ms = effTs;
+              mergedList.push(loc);
+              toPushUpsert.push({ user_id: userId, id_movimiento: id, data: loc, updated_at_ms: effTs, deleted: false });
+              return;
+            }
+            // 3. Solo existe en nube -> si no está borrado, descargar a local
+            if (!loc && rem) {
+              if (!rem.deleted && rem.data) {
+                mergedList.push(Object.assign({}, rem.data, { id_movimiento: id, updated_at_ms: remTs }));
+              }
+              return;
+            }
+            // 4. Existe en ambos -> gana el timestamp más reciente
+            if (loc && rem) {
+              if (rem.deleted && remTs >= locTs) {
+                if (!state.deletedRegistry) state.deletedRegistry = { _schema: 8, ids: {}, sigs: {} };
+                if (!state.deletedRegistry.ids) state.deletedRegistry.ids = {};
+                state.deletedRegistry.ids[id] = remTs;
+                return;
+              }
+              if (locTs > remTs) {
+                mergedList.push(loc);
+                toPushUpsert.push({ user_id: userId, id_movimiento: id, data: loc, updated_at_ms: locTs, deleted: false });
+              } else {
+                mergedList.push(Object.assign({}, rem.data, { id_movimiento: id, updated_at_ms: remTs }));
+              }
+            }
+          });
+
+          // Subir diferencias a Supabase
+          if (toPushUpsert.length) {
+            await pushChunksToSupabase(toPushUpsert);
+          }
+
+          // Fusionar bloques de configuración
+          const meta = getSbMeta();
+          const remoteCfgMap = {};
+          remoteCfgRows.forEach(function(rc) { if (rc && rc.block_key) remoteCfgMap[rc.block_key] = rc; });
+          const cfgToPush = [];
+          window.__IS_APPLYING_REMOTE_SYNC__ = true;
+          try {
+            state.movimientos = mergedList;
+            SB_CONFIG_KEYS.forEach(function(k) {
+              const rc = remoteCfgMap[k];
+              const localTs = Number((meta.configTimestamps && meta.configTimestamps[k]) || 0);
+              const remoteTs = rc ? Number(rc.updated_at_ms || 0) : 0;
+              if (rc && remoteTs > localTs && rc.block_value !== undefined) {
+                state[k] = rc.block_value;
+                meta.configTimestamps[k] = remoteTs;
+              } else if (state[k] !== undefined && (!rc || localTs > remoteTs)) {
+                const effTs = localTs > 0 ? localTs : nowTs;
+                meta.configTimestamps[k] = effTs;
+                cfgToPush.push({ user_id: userId, block_key: k, block_value: state[k], updated_at_ms: effTs });
+              }
+            });
+          } finally {
+            window.__IS_APPLYING_REMOTE_SYNC__ = false;
+          }
+
+          if (cfgToPush.length) {
+            await sbRestFetch('user_config_blocks?on_conflict=user_id,block_key', {
+              method: 'POST',
+              headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+              body: cfgToPush
+            });
+          }
+
+          if (typeof flushLocalStorageStateNow === 'function') flushLocalStorageStateNow();
+          meta.lastSyncTs = nowTs;
+          saveSbMeta(meta);
+
+          const afterDigest = (typeof buildSyncVisualDigest === 'function') ? buildSyncVisualDigest() : 'CHANGED';
+          if (beforeDigest !== afterDigest) {
+            if (typeof renderDropdowns === 'function') renderDropdowns();
+            if (typeof renderAllViews === 'function') renderAllViews(true);
+          }
+          updateSupabaseUI('Sincronizado (' + state.movimientos.length + ' movimientos).');
+        } catch (err) {
+          console.error('[SupabaseSync]', err);
+          updateSupabaseUI('Error al sincronizar: ' + (err && err.message ? err.message : 'revisa tu conexión'));
+        } finally {
+          _sbSyncInFlight = false;
+          updateSupabaseUI();
+        }
+      }
+
+      function scheduleSupabaseAutoSync() {
+        const sess = getSbSession();
+        if (!sess || !sess.access_token || window.__IS_APPLYING_REMOTE_SYNC__) return;
+        const meta = getSbMeta();
+        const nowTs = Date.now();
+        SB_CONFIG_KEYS.forEach(function(k) { meta.configTimestamps[k] = nowTs; });
+        saveSbMeta(meta);
+        if (_sbDebounceTimer) clearTimeout(_sbDebounceTimer);
+        _sbDebounceTimer = setTimeout(function() {
+          runSupabaseSync('merge');
+        }, 1600);
+      }
+
+      // Hook no invasivo sobre saveAllStateInstant (mantiene 100% intacto Apps Script Sync)
+      if (typeof saveAllStateInstant === 'function' && !saveAllStateInstant._sbWrapped) {
+        const _origSave = saveAllStateInstant;
+        saveAllStateInstant = function() {
+          const res = _origSave.apply(this, arguments);
+          scheduleSupabaseAutoSync();
+          return res;
+        };
+        saveAllStateInstant._sbWrapped = true;
+      }
+
+      async function handlePostAuthFirstSync() {
+        try {
+          const remoteMovs = (await sbRestFetch('user_movements?select=id_movimiento,deleted&limit=5')) || [];
+          const cloudLive = remoteMovs.filter(function(r) { return r && !r.deleted; }).length;
+          const localCount = Array.isArray(state.movimientos) ? state.movimientos.length : 0;
+
+          if (cloudLive === 0 && localCount > 0) {
+            const wantPush = window.confirm(
+              'Tu cuenta en la nube está vacía y tienes ' + localCount + ' movimientos en este dispositivo.\n\n' +
+              '¿Deseas subir ahora tu respaldo local a tu cuenta en la nube?'
+            );
+            if (wantPush) {
+              await runSupabaseSync('push_all');
+            }
+          } else if (cloudLive > 0 && localCount === 0) {
+            await runSupabaseSync('pull_all');
+          } else {
+            await runSupabaseSync('merge');
+          }
+        } catch (_e) {
+          await runSupabaseSync('merge');
+        }
+      }
+
+      function bindSupabaseEvents() {
+        const btnIn = document.getElementById('btnSbSignIn');
+        const btnUp = document.getElementById('btnSbSignUp');
+        const btnOut = document.getElementById('btnSbSignOut');
+        const btnSync = document.getElementById('btnSbSyncNow');
+        const btnPush = document.getElementById('btnSbPushAll');
+        const btnPull = document.getElementById('btnSbPullAll');
+
+        if (btnIn) {
+          btnIn.addEventListener('click', async function() {
+            const email = (document.getElementById('sbEmailInput').value || '').trim();
+            const password = document.getElementById('sbPasswordInput').value || '';
+            if (!email || password.length < 6) {
+              setSbAuthMessage('Ingresa un correo válido y una contraseña de al menos 6 caracteres.', true);
+              return;
+            }
+            btnIn.disabled = true;
+            setSbAuthMessage('Iniciando sesión...', false);
+            try {
+              const data = await sbAuthFetch('/auth/v1/token?grant_type=password', { email: email, password: password });
+              saveSbSession({
+                access_token: data.access_token,
+                refresh_token: data.refresh_token,
+                expires_at: data.expires_at || (Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600)),
+                user: data.user
+              });
+              setSbAuthMessage('', false);
+              updateSupabaseUI('Sesión iniciada.');
+              if (typeof showToast === 'function') showToast('Sesión iniciada: ' + email, '🔐');
+              await handlePostAuthFirstSync();
+            } catch (err) {
+              const m = String(err && err.message || '');
+              if (/invalid login/i.test(m)) setSbAuthMessage('Correo o contraseña incorrectos.', true);
+              else if (/email not confirmed/i.test(m)) setSbAuthMessage('Debes confirmar tu correo electrónico antes de entrar (o desactivar Confirm email en Supabase).', true);
+              else setSbAuthMessage(m || 'No se pudo iniciar sesión.', true);
+            } finally {
+              btnIn.disabled = false;
+            }
+          });
+        }
+
+        if (btnUp) {
+          btnUp.addEventListener('click', async function() {
+            const email = (document.getElementById('sbEmailInput').value || '').trim();
+            const password = document.getElementById('sbPasswordInput').value || '';
+            if (!email || password.length < 6) {
+              setSbAuthMessage('Ingresa un correo válido y una contraseña de al menos 6 caracteres.', true);
+              return;
+            }
+            btnUp.disabled = true;
+            setSbAuthMessage('Creando cuenta...', false);
+            try {
+              const data = await sbAuthFetch('/auth/v1/signup', { email: email, password: password });
+              if (data && data.access_token) {
+                saveSbSession({
+                  access_token: data.access_token,
+                  refresh_token: data.refresh_token,
+                  expires_at: data.expires_at || (Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600)),
+                  user: data.user
+                });
+                setSbAuthMessage('', false);
+                updateSupabaseUI('Cuenta creada y conectada.');
+                if (typeof showToast === 'function') showToast('¡Cuenta creada correctamente!', '✨');
+                await handlePostAuthFirstSync();
+              } else {
+                setSbAuthMessage('Cuenta creada. Revisa tu correo para confirmarla y luego inicia sesión.', false);
+              }
+            } catch (err) {
+              const m = String(err && err.message || '');
+              if (/already registered/i.test(m)) setSbAuthMessage('Ese correo ya tiene cuenta. Usa "Iniciar sesión".', true);
+              else setSbAuthMessage(m || 'No se pudo crear la cuenta.', true);
+            } finally {
+              btnUp.disabled = false;
+            }
+          });
+        }
+
+        if (btnOut) {
+          btnOut.addEventListener('click', async function() {
+            const sess = getSbSession();
+            saveSbSession(null);
+            updateSupabaseUI();
+            if (typeof showToast === 'function') showToast('Sesión cerrada (tus datos locales se conservan).', '🚪');
+            if (sess && sess.access_token) {
+              fetch(SB_URL + '/auth/v1/logout', {
+                method: 'POST',
+                headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + sess.access_token }
+              }).catch(function() {});
+            }
+          });
+        }
+
+        if (btnSync) btnSync.addEventListener('click', function() { runSupabaseSync('merge'); });
+        if (btnPush) {
+          btnPush.addEventListener('click', function() {
+            if (window.confirm('¿Subir todos tus movimientos y configuraciones locales a tu cuenta en la nube?')) {
+              runSupabaseSync('push_all');
+            }
+          });
+        }
+        if (btnPull) {
+          btnPull.addEventListener('click', function() {
+            if (window.confirm('¿Restaurar todos tus datos desde tu cuenta en la nube? Esto reemplazará los datos locales de este dispositivo.')) {
+              runSupabaseSync('pull_all');
+            }
+          });
+        }
+
+        updateSupabaseUI();
+        // Sincronización silenciosa al abrir o volver a la app si hay sesión activa
+        if (getSbSession()) {
+          setTimeout(function() { runSupabaseSync('merge'); }, 1800);
+        }
+        document.addEventListener('visibilitychange', function() {
+          if (document.visibilityState === 'visible' && getSbSession()) {
+            runSupabaseSync('merge');
+          }
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindSupabaseEvents);
+      } else {
+        bindSupabaseEvents();
+      }
+    })();
   </script>
   <button type="button" id="btnExitForceMobileFloat" title="Volver a la vista completa de Ordenador (PC)" class="hidden fixed top-4 right-4 z-[9998] items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#0A2558] hover:bg-[#133878] active:scale-95 text-white text-xs font-bold shadow-xl border border-white/20 transition"><span>💻</span> <span>Vista PC</span></button>
 </body>
