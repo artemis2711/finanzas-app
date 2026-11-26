@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.4.4" />
+  <meta name="app-build" content="2.5.0" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y correccion de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -1621,11 +1621,8 @@
     <!-- =================================================================== -->
     <section id="tab-importar" class="tab-panel hidden space-y-5">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="min-w-0 flex-1">
-            <h2 class="text-base md:text-lg font-bold text-slate-900">Importar Estado de Cuenta (PDF / CSV / Excel) o Captura del Día</h2>
-            <p class="text-xs text-slate-600">Analiza automáticamente cartolas de <strong>Lider BCI, Tenpo y Mercado Pago / Mach</strong>: detecta <strong>cargos, cuotas, reembolsos, duplicados contra tu registro manual, transferencias internas</strong> (tú decides si subirlas) y <strong>sugiere comercios por coincidencia de monto</strong>.</p>
-          </div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+          <h2 class="text-base md:text-lg font-bold text-slate-900 leading-snug">Importar Estado de Cuenta o Captura del Día</h2>
           <div class="flex flex-wrap items-center gap-2 shrink-0">
             <label for="impAiToggle" class="inline-flex items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer select-none hover:bg-slate-100 transition">
               <span class="text-xs font-bold text-slate-800">Lectura con IA</span>
@@ -3974,7 +3971,8 @@
       if (ida !== idb) return idb - ida;
       const ca = Number(a.cuota_actual || 1);
       const cb = Number(b.cuota_actual || 1);
-      return ca - cb;
+      if (ca !== cb) return ca - cb;
+      return String(b.id_movimiento || '').localeCompare(String(a.id_movimiento || ''));
     }
 
     function sortMovimientosDesc() {
@@ -11054,7 +11052,8 @@
         }
 
         if (isSavings) {
-          catSuggested = 'AHORRO_CUENTA';
+          const _savPocketsInit = (typeof getSavingsPocketsForOwner === 'function') ? getSavingsPocketsForOwner(personaSuggested) : [];
+          catSuggested = (_savPocketsInit && _savPocketsInit.length) ? ('SAV_POCKET::' + _savPocketsInit[0]) : 'AHORRO_CUENTA';
         } else if (isTransferIn) {
           catSuggested = 'INGRESO_TRANSFERENCIA';
         } else if (isTransferOut && !dupMatch) {
@@ -11200,20 +11199,10 @@
         }
 
         let catOptions = '';
-        if (it.isRefund) {
-          catOptions = [
-            '<option value="REEMBOLSO_DEVOLUCION"' + (it.categoria === 'REEMBOLSO_DEVOLUCION' ? ' selected' : '') + '>💚 Reembolso / Devolución</option>',
-            '<option value="REEMBOLSO_CASHBACK"' + (it.categoria === 'REEMBOLSO_CASHBACK' ? ' selected' : '') + '>✨ Cashback / Abono a favor</option>'
-          ].join('');
-        } else if (it.isSavings) {
-          catOptions = '<option value="AHORRO_CUENTA" selected>🏦 Ahorro</option>';
-        } else if (it.isTransferIn || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO') {
-          catOptions = [
-            '<option value="INGRESO_SUELDO"' + (it.categoria === 'INGRESO_SUELDO' ? ' selected' : '') + '>💼 Ingreso: Sueldo</option>',
-            '<option value="INGRESO_OTRO"' + (it.categoria === 'INGRESO_OTRO' ? ' selected' : '') + '>💵 Ingreso (Extra / Otros)</option>',
-            '<option value="INGRESO_TRANSFERENCIA"' + (it.categoria === 'INGRESO_TRANSFERENCIA' ? ' selected' : '') + '>📥 Ingreso: Transferencia Recibida</option>',
-            '<option value="REEMBOLSO_DEVOLUCION"' + (it.categoria === 'REEMBOLSO_DEVOLUCION' ? ' selected' : '') + '>💚 Reembolso / Devolución</option>'
-          ].join('');
+        if (it.isSavings || String(it.categoria || '').indexOf('SAV_POCKET::') === 0 || it.categoria === 'AHORRO_CUENTA') {
+          catOptions = buildAutoregSavingsOptionsHtml(it.categoria, it.persona);
+        } else if (it.isRefund || it.isTransferIn || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO' || it.categoria === 'INGRESO_TRANSFERENCIA' || it.categoria === 'REEMBOLSO_DEVOLUCION' || it.categoria === 'REEMBOLSO_CASHBACK') {
+          catOptions = buildAutoregIncomeOptionsHtml(it.categoria);
         } else {
           // Para Cargo / Pago (y Transferencia Enviada), mostrar únicamente las categorías de gasto
           const prefixOpts = (it.isTransferOut || it.categoria === 'POR_CATEGORIZAR')
@@ -14223,15 +14212,23 @@
           it.tarjeta = finalTarjeta;
           it.medio_pago = finalMedio;
 
-          const isSavingsMov = Boolean(it.isSavings || it.categoria === 'AHORRO_CUENTA' || it.categoria === 'Ahorro' || /^ahorro\s*20\b/i.test(String(it.detalle || '').trim()));
-          const isRefundMov = Boolean(!isSavingsMov && (it.isRefund || it.categoria === 'REEMBOLSO_DEVOLUCION' || it.categoria === 'REEMBOLSO_CASHBACK'));
-          const isIncomeTransfer = Boolean(!isSavingsMov && !isRefundMov && (it.isTransferIn || it.categoria === 'INGRESO_TRANSFERENCIA' || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO'));
+          const rawItCat = String(it.categoria || '');
+          const isSavingsPocketSel = rawItCat.indexOf('SAV_POCKET::') === 0;
+          const isSavingsMov = Boolean(it.isSavings || isSavingsPocketSel || rawItCat === 'AHORRO_CUENTA' || rawItCat === 'Ahorro' || /^ahorro\s*20\b/i.test(String(it.detalle || '').trim()));
+          const isDirectIncomeSel = (rawItCat === 'INGRESO_SUELDO' || rawItCat === 'INGRESO_OTRO');
+          const isRefundMov = Boolean(!isSavingsMov && !isDirectIncomeSel && (it.isRefund || rawItCat === 'REEMBOLSO_DEVOLUCION' || rawItCat === 'REEMBOLSO_CASHBACK'));
+          const isIncomeTransfer = Boolean(!isSavingsMov && !isRefundMov && (isDirectIncomeSel || it.isTransferIn || rawItCat === 'INGRESO_TRANSFERENCIA'));
           const tipoMov = isSavingsMov ? 'Ahorro' : ((isRefundMov || isIncomeTransfer) ? 'Ingreso' : 'Gasto');
           const pTarget = (it.persona === 'Familiar' || !it.persona) ? 'Presupuesto' : it.persona;
-          const tipoIng = isRefundMov
-            ? (it.categoria === 'REEMBOLSO_CASHBACK' ? 'Cashback' : (pTarget === 'Presupuesto' ? 'Reembolso' : 'Devolución gasto personal'))
-            : (it.categoria === 'INGRESO_SUELDO' ? 'Sueldo' : (it.categoria === 'INGRESO_OTRO' ? 'Ingreso' : (isIncomeTransfer ? (pTarget === 'Presupuesto' ? 'Reembolso' : 'Devolución gasto personal') : 'No aplica')));
-          const finalCat = isSavingsMov ? 'Ahorro' : ((isRefundMov || isIncomeTransfer) ? 'Ingreso' : it.categoria);
+          const tipoIng = isDirectIncomeSel
+            ? (rawItCat === 'INGRESO_SUELDO' ? 'Sueldo' : 'Ingreso')
+            : (isRefundMov
+                ? (rawItCat === 'REEMBOLSO_CASHBACK' ? 'Cashback' : (pTarget === 'Presupuesto' ? 'Reembolso' : 'Devolución gasto personal'))
+                : (isIncomeTransfer ? (pTarget === 'Presupuesto' ? 'Reembolso' : 'Devolución gasto personal') : 'No aplica'));
+          const savPocketChosen = isSavingsPocketSel
+            ? rawItCat.replace(/^SAV_POCKET::/, '').trim()
+            : ((typeof getSavingsPocketsForOwner === 'function' && getSavingsPocketsForOwner(pTarget)[0]) || 'Ahorro');
+          const finalCat = isSavingsMov ? (savPocketChosen || 'Ahorro') : ((isRefundMov || isIncomeTransfer) ? 'Ingreso' : rawItCat);
           const esPers = finalCat === 'Gasto personal';
 
           it.persona = pTarget;
@@ -14731,6 +14728,8 @@
         const editCat = document.getElementById('editCategoria');
         if (mov.tipo_movimiento === 'Ingreso') {
           editCat.innerHTML =
+            '<option value="Sueldo">Sueldo</option>' +
+            '<option value="Ingreso">Ingreso</option>' +
             '<option value="Devolución gasto personal">Devolución compras personales</option>' +
             '<option value="Reembolso">Reembolso</option>' +
             '<option value="Cashback">Cashback</option>';
@@ -14791,6 +14790,8 @@
         const editPers = document.getElementById('editPersona');
         if (tipo === 'Ingreso') {
           editCat.innerHTML =
+            '<option value="Sueldo">Sueldo</option>' +
+            '<option value="Ingreso">Ingreso</option>' +
             '<option value="Devolución gasto personal">Devolución compras personales</option>' +
             '<option value="Reembolso">Reembolso</option>' +
             '<option value="Cashback">Cashback</option>';
@@ -16212,16 +16213,10 @@
       }
 
       let catOptions = '';
-      if (it.isRefund) {
-        catOptions = '<option value="REEMBOLSO_DEVOLUCION"' + (it.categoria === 'REEMBOLSO_DEVOLUCION' ? ' selected' : '') + '>💚 Reembolso / Devolución</option>' +
-          '<option value="REEMBOLSO_CASHBACK"' + (it.categoria === 'REEMBOLSO_CASHBACK' ? ' selected' : '') + '>✨ Cashback / Abono</option>';
-      } else if (it.isSavings) {
-        catOptions = '<option value="AHORRO_CUENTA" selected>🏦 Ahorro</option>';
-      } else if (it.isTransferIn || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO') {
-        catOptions = '<option value="INGRESO_SUELDO"' + (it.categoria === 'INGRESO_SUELDO' ? ' selected' : '') + '>💼 Ingreso: Sueldo</option>' +
-          '<option value="INGRESO_OTRO"' + (it.categoria === 'INGRESO_OTRO' ? ' selected' : '') + '>💵 Ingreso (Extra / Otros)</option>' +
-          '<option value="INGRESO_TRANSFERENCIA"' + (it.categoria === 'INGRESO_TRANSFERENCIA' ? ' selected' : '') + '>📥 Transferencia Recibida</option>' +
-          '<option value="REEMBOLSO_DEVOLUCION"' + (it.categoria === 'REEMBOLSO_DEVOLUCION' ? ' selected' : '') + '>💚 Reembolso / Devolución</option>';
+      if (it.isSavings || String(it.categoria || '').indexOf('SAV_POCKET::') === 0 || it.categoria === 'AHORRO_CUENTA') {
+        catOptions = buildAutoregSavingsOptionsHtml(it.categoria, it.persona);
+      } else if (it.isRefund || it.isTransferIn || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO' || it.categoria === 'INGRESO_TRANSFERENCIA' || it.categoria === 'REEMBOLSO_DEVOLUCION' || it.categoria === 'REEMBOLSO_CASHBACK') {
+        catOptions = buildAutoregIncomeOptionsHtml(it.categoria);
       } else {
         const prefixOpts = (it.isTransferOut || it.categoria === 'POR_CATEGORIZAR')
           ? ['<option value="POR_CATEGORIZAR"' + (it.categoria === 'POR_CATEGORIZAR' ? ' selected' : '') + '>-- Seleccionar Categoría --</option>']
@@ -16617,7 +16612,7 @@
 
     const SECTION_INTRO_GUIDES = {
       'tab-registro': '➕ Ingresa gastos, ingresos, devoluciones o aportes/retiros de ahorro. En reembolsos a tarjeta de crédito elige Crédito y tu tarjeta para descontar de su ciclo; usa los botones rápidos para compras frecuentes.',
-      'tab-importar': '📄 Sube una cartola (PDF, Excel, CSV) o captura de pantalla (Tenpo, Lider, MercadoPago). Puedes revisar 1 a 1 o en tabla antes de guardar.',
+      'tab-importar': '📄 Sube cartolas (PDF, CSV, Excel) o capturas de Lider BCI, Tenpo, MercadoPago u otros bancos. Detecta cargos, cuotas, reembolsos, duplicados, transferencias y sugiere comercios por monto; revisa 1 a 1 o en tabla antes de guardar.',
       'tab-presupuesto': '📊 Presupuesto Mensual compara tus topes de Gastos Fijos y Supermercado por mes; Flujo de Caja calcula tu excedente (Ingresos − Egresos − Ahorro). Toca cualquier mes o fila para ver su desglose.',
       'tab-analisis': '🔬 Revisa tu salud financiera anual o mensual, comercios principales y patrones por día. Al final puedes desplegar Gastos Personales, Gastos Hormiga y el Simulador de ahorro.',
       'tab-tarjetas': '💳 Selecciona una o más tarjetas para revisar sus ciclos de facturación según el día de cierre configurado y ver el detalle de cada cuota.',
@@ -18619,12 +18614,14 @@
 
     function buildSyncVisualDigest() {
       const movs = Array.isArray(state.movimientos) ? state.movimientos : [];
-      let d = String(movs.length) + '|';
+      const parts = [];
       for (let i = 0; i < movs.length; i++) {
         const m = movs[i];
         if (!m) continue;
-        d += (m.id_movimiento || '') + ':' + (m.monto || 0) + ':' + (m.detalle || '') + ':' + (m.categoria || '') + ':' + (m.persona || '') + ':' + (m.fecha_compra || '') + ';';
+        parts.push((m.id_movimiento || '') + ':' + (m.monto || 0) + ':' + (m.detalle || '') + ':' + (m.categoria || '') + ':' + (m.persona || '') + ':' + (m.fecha_compra || '') + ':' + (m.tipo_ingreso || ''));
       }
+      parts.sort();
+      let d = String(movs.length) + '|' + parts.join(';');
       try {
         d += '|' + JSON.stringify(SYNC_CONFIG_BLOCKS.map(function(k) { return state[k]; }));
       } catch (_e) {}
@@ -19456,6 +19453,7 @@
           const cfgToPush = [];
           window.__IS_APPLYING_REMOTE_SYNC__ = true;
           try {
+            mergedList.sort(compareByFechaDesc);
             state.movimientos = mergedList;
             SB_CONFIG_KEYS.forEach(function(k) {
               const rc = remoteCfgMap[k];
@@ -19783,6 +19781,32 @@
     // =========================================================================
     // BOLSILLOS DE AHORRO FILTRADOS POR TITULAR (PRESUPUESTO / PERSONA)
     // =========================================================================
+    function buildAutoregSavingsOptionsHtml(currentCatVal, ownerVal) {
+      let pockets = (typeof getSavingsPocketsForOwner === 'function') ? getSavingsPocketsForOwner(ownerVal || 'Presupuesto') : [];
+      if (!pockets || !pockets.length) {
+        pockets = (typeof getUserSavingsCategories === 'function') ? getUserSavingsCategories() : ['Ahorro 20 porciento', 'Fondo de Emergencia'];
+      }
+      if (!pockets || !pockets.length) pockets = ['Ahorro'];
+      const curClean = String(currentCatVal || '').replace(/^SAV_POCKET::/, '').trim();
+      const hasMatch = pockets.some(function(p) { return p === curClean; });
+      const activePocket = hasMatch ? curClean : pockets[0];
+      return pockets.map(function(p) {
+        const val = 'SAV_POCKET::' + p;
+        const sel = (p === activePocket) ? ' selected' : '';
+        return '<option value="' + escapeHtml(val) + '"' + sel + '>🏦 ' + escapeHtml(p) + '</option>';
+      }).join('');
+    }
+
+    function buildAutoregIncomeOptionsHtml(currentCatVal) {
+      return [
+        '<option value="INGRESO_SUELDO"' + (currentCatVal === 'INGRESO_SUELDO' ? ' selected' : '') + '>💼 Sueldo</option>',
+        '<option value="INGRESO_OTRO"' + (currentCatVal === 'INGRESO_OTRO' ? ' selected' : '') + '>💵 Ingreso</option>',
+        '<option value="REEMBOLSO_DEVOLUCION"' + (currentCatVal === 'REEMBOLSO_DEVOLUCION' ? ' selected' : '') + '>💚 Reembolso / Devolución</option>',
+        '<option value="REEMBOLSO_CASHBACK"' + (currentCatVal === 'REEMBOLSO_CASHBACK' ? ' selected' : '') + '>🏷️ Cashback / Abono a favor</option>',
+        '<option value="INGRESO_TRANSFERENCIA"' + (currentCatVal === 'INGRESO_TRANSFERENCIA' ? ' selected' : '') + '>📥 Transferencia Recibida</option>'
+      ].join('');
+    }
+
     function getSavingsPocketsForOwner(ownerVal) {
       const allCats = (typeof getUserSavingsCategories === 'function') ? getUserSavingsCategories() : (state.savingsConfig && state.savingsConfig.savingsCategories ? state.savingsConfig.savingsCategories : []);
       const ownersMap = (state.savingsConfig && state.savingsConfig.savingsPocketOwners && typeof state.savingsConfig.savingsPocketOwners === 'object')
