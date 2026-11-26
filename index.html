@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.5.0" />
+  <meta name="app-build" content="2.5.1" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y correccion de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -5127,16 +5127,7 @@
         opt3.textContent = c.nombre_tarjeta;
         if (histCard) histCard.appendChild(opt3);
 
-        const tipoMovNow = document.getElementById('fTipoMov') ? document.getElementById('fTipoMov').value : 'Gasto';
-        if (tipoMovNow === 'Ingreso') {
-          // En modo Ingreso / Devolución: mostrar siempre las tarjetas de Crédito y Débito claramente identificadas para poder asignar reembolsos a Tarjeta de Crédito o Transferencia sin bloqueo
-          const opt = document.createElement('option');
-          opt.value = c.nombre_tarjeta;
-          opt.textContent = (c.tipo_medio === 'Crédito')
-            ? ('💳 ' + c.nombre_tarjeta + ' (Tarjeta de Crédito • Cierre día ' + c.dia_cierre_ciclo + ')')
-            : ('🏧 ' + c.nombre_tarjeta + ' (' + c.tipo_medio + ')');
-          if (fTarjeta) fTarjeta.appendChild(opt);
-        } else if (medio === 'Crédito' && c.tipo_medio === 'Crédito') {
+        if (medio === 'Crédito' && c.tipo_medio === 'Crédito') {
           const opt = document.createElement('option');
           opt.value = c.nombre_tarjeta;
           opt.textContent = c.nombre_tarjeta + ' (Cierre día ' + c.dia_cierre_ciclo + ')';
@@ -5146,37 +5137,26 @@
           opt.value = c.nombre_tarjeta;
           opt.textContent = c.nombre_tarjeta;
           if (fTarjeta) fTarjeta.appendChild(opt);
-        } else if (medio === 'Efectivo' && c.tipo_medio === 'Efectivo') {
-          const opt = document.createElement('option');
-          opt.value = c.nombre_tarjeta;
-          opt.textContent = c.nombre_tarjeta;
-          if (fTarjeta) fTarjeta.appendChild(opt);
         }
       });
 
-      const tipoMovCheck = document.getElementById('fTipoMov') ? document.getElementById('fTipoMov').value : 'Gasto';
-      if (tipoMovCheck === 'Ingreso' || medio === 'Transferencia') {
-        const optNoAp = document.createElement('option');
-        optNoAp.value = 'No aplica';
-        optNoAp.textContent = '🔄 No aplica (Transferencia directa / Cuenta)';
-        if (fTarjeta) fTarjeta.appendChild(optNoAp);
-      }
-
-      if (fTarjeta && !fTarjeta.options.length) {
-        const opt = document.createElement('option');
-        opt.value = medio === 'Transferencia' ? 'No aplica' : medio;
-        opt.textContent = medio === 'Transferencia' ? 'No aplica (Transferencia)' : medio;
-        fTarjeta.appendChild(opt);
-      }
-
-      if (medio === 'Transferencia' && Array.from(fTarjeta.options).some(function(o) { return o.value === 'No aplica'; })) {
-        fTarjeta.value = 'No aplica';
+      if (medio === 'Efectivo') {
+        if (fTarjeta) {
+          fTarjeta.innerHTML = '<option value="No aplica">No aplica</option>';
+          fTarjeta.value = 'No aplica';
+        }
       } else {
+        if (fTarjeta && !fTarjeta.options.length) {
+          const opt = document.createElement('option');
+          opt.value = 'No aplica';
+          opt.textContent = 'No aplica';
+          fTarjeta.appendChild(opt);
+        }
         const lookupMedio = (medio === 'Transferencia') ? 'Débito' : medio;
         const defCardObj = state.cards.find(function(c) { return c.nombre_tarjeta === state.defaultCardForRegistro; });
         const preferredCardForMedio = state.defaultCardByType[lookupMedio]
           || ((defCardObj && defCardObj.tipo_medio === lookupMedio) ? defCardObj.nombre_tarjeta : '');
-        if (preferredCardForMedio && Array.from(fTarjeta.options).some(function(o) { return o.value === preferredCardForMedio; })) {
+        if (fTarjeta && preferredCardForMedio && Array.from(fTarjeta.options).some(function(o) { return o.value === preferredCardForMedio; })) {
           fTarjeta.value = preferredCardForMedio;
         }
       }
@@ -14757,11 +14737,7 @@
           editCat.value = mov.categoria || 'Comida/Supermercado';
         }
 
-        const editTar = document.getElementById('editTarjeta');
-        editTar.innerHTML = state.cards.map(function(c) {
-          return '<option value="' + escapeHtml(c.nombre_tarjeta) + '">' + escapeHtml(c.nombre_tarjeta) + '</option>';
-        }).concat(['<option value="No aplica">No aplica</option>']).join('');
-        editTar.value = mov.tarjeta || 'No aplica';
+        syncEditTarjetaByMedioPago(mov.medio_pago || 'Débito', mov.tarjeta || 'No aplica');
 
         const editPers = document.getElementById('editPersona');
         const currentCat = editCat.value;
@@ -14782,6 +14758,39 @@
         const modal = document.getElementById('editMovementModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+      }
+
+      function syncEditTarjetaByMedioPago(medioVal, preferredCard) {
+        const editTar = document.getElementById('editTarjeta');
+        if (!editTar) return;
+        const medio = String(medioVal || 'Débito');
+        if (medio === 'Efectivo') {
+          editTar.innerHTML = '<option value="No aplica">No aplica</option>';
+          editTar.value = 'No aplica';
+          return;
+        }
+        const targetType = (medio === 'Transferencia' || medio === 'Débito') ? 'Débito' : (medio === 'Crédito' ? 'Crédito' : '');
+        const matching = (state.cards || []).filter(function(c) {
+          return !targetType || c.tipo_medio === targetType;
+        });
+        let opts = matching.map(function(c) {
+          return '<option value="' + escapeHtml(c.nombre_tarjeta) + '">' + escapeHtml(c.nombre_tarjeta) + '</option>';
+        });
+        if (!opts.length) {
+          opts = ['<option value="No aplica">No aplica</option>'];
+        }
+        editTar.innerHTML = opts.join('');
+        if (preferredCard && Array.from(editTar.options).some(function(o) { return o.value === preferredCard; })) {
+          editTar.value = preferredCard;
+        } else if (editTar.options.length) {
+          editTar.selectedIndex = 0;
+        }
+      }
+
+      if (document.getElementById('editMedioPago')) {
+        document.getElementById('editMedioPago').addEventListener('change', function(e) {
+          syncEditTarjetaByMedioPago(e.target.value, document.getElementById('editTarjeta') ? document.getElementById('editTarjeta').value : '');
+        });
       }
 
       document.getElementById('editTipoMov').addEventListener('change', function(e) {
