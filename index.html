@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.4.3" />
+  <meta name="app-build" content="2.4.4" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y correccion de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -13750,7 +13750,7 @@
         const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
         const timer = ctrl ? setTimeout(function() { try { ctrl.abort(); } catch (_e) {} }, 25000) : null;
         try {
-          const resp = await fetch(auth.url + '/functions/v1/parse-movements', {
+          const resp = await fetch(auth.url + '/functions/v1/Parse-Movements', {
             method: 'POST',
             mode: 'cors',
             signal: ctrl ? ctrl.signal : undefined,
