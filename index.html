@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.3.5" />
-  <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
+  <meta name="app-build" content="2.4.0" />
+  <meta name="app-notes" content="Autoregistro con opcion de lectura asistida por IA via Supabase y mejoras de interfaz." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -1621,11 +1621,19 @@
     <!-- =================================================================== -->
     <section id="tab-importar" class="tab-panel hidden space-y-5">
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="min-w-0 flex-1">
             <h2 class="text-base md:text-lg font-bold text-slate-900">Importar Estado de Cuenta (PDF / CSV / Excel) o Captura del Día</h2>
             <p class="text-xs text-slate-600">Analiza automáticamente cartolas de <strong>Lider BCI, Tenpo y Mercado Pago / Mach</strong>: detecta <strong>cargos, cuotas, reembolsos, duplicados contra tu registro manual, transferencias internas</strong> (tú decides si subirlas) y <strong>sugiere comercios por coincidencia de monto</strong>.</p>
           </div>
+          <label for="impAiToggle" class="inline-flex items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer select-none shrink-0 hover:bg-slate-100 transition">
+            <span class="text-xs font-bold text-slate-800">Lectura con IA</span>
+            <span class="relative inline-flex items-center">
+              <input type="checkbox" id="impAiToggle" class="sr-only peer" />
+              <span class="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-[#1B365D] transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span>
+            </span>
+            <span id="impAiToggleState" class="text-[11px] font-semibold text-slate-500 min-w-[46px]">Inactivo</span>
+          </label>
         </div>
 
         <div id="grid-tab-importar" class="subsec-grid-container space-y-4 lg:space-y-0">
@@ -10995,7 +11003,7 @@
         const ruleHasCleanDet = Boolean(ruleHasValidExpCat && rule.detalle_normalizado && GENERIC_MERCHANT_NAMES.indexOf(String(rule.detalle_normalizado).trim().toLowerCase()) === -1);
 
         let finalDet = ruleHasCleanDet ? rule.detalle_normalizado : baseDet;
-        let catSuggested = ruleHasValidExpCat ? rule.categoria_asignada : 'Comida/Supermercado';
+        let catSuggested = ruleHasValidExpCat ? rule.categoria_asignada : ((item.categoria_sugerida && isValidExpCat(item.categoria_sugerida)) ? item.categoria_sugerida : 'Comida/Supermercado');
         let personaSuggested = 'Presupuesto';
 
         if (dupMatch && dupMatch.mov) {
@@ -13623,6 +13631,116 @@
         }
       }
 
+      // Interruptor de Lectura con IA (via Supabase Edge Function 'parse-movements')
+      const AI_IMPORT_PREF_KEY = 'ff_auto_ai_enabled_v1';
+      function isAiImportEnabled() {
+        try { return localStorage.getItem(AI_IMPORT_PREF_KEY) === '1'; } catch (_e) { return false; }
+      }
+      function updateAiImportToggleUI() {
+        const cb = document.getElementById('impAiToggle');
+        const st = document.getElementById('impAiToggleState');
+        const on = isAiImportEnabled();
+        if (cb) cb.checked = on;
+        if (st) {
+          st.textContent = on ? 'Activo' : 'Inactivo';
+          st.className = 'text-[11px] font-semibold min-w-[46px] ' + (on ? 'text-[#1B365D]' : 'text-slate-500');
+        }
+      }
+      (function initAiImportToggle() {
+        const cb = document.getElementById('impAiToggle');
+        updateAiImportToggleUI();
+        if (cb) {
+          cb.addEventListener('change', function() {
+            try { localStorage.setItem(AI_IMPORT_PREF_KEY, cb.checked ? '1' : '0'); } catch (_e) {}
+            updateAiImportToggleUI();
+          });
+        }
+      })();
+
+      function compressImageDataUrlForAi(dataUrl, maxDim) {
+        return new Promise(function(resolve) {
+          try {
+            const img = new Image();
+            img.onload = function() {
+              try {
+                const limit = maxDim || 1600;
+                const scale = Math.min(1, limit / Math.max(img.width, img.height, 1));
+                const w = Math.max(1, Math.round(img.width * scale));
+                const h = Math.max(1, Math.round(img.height * scale));
+                const c = document.createElement('canvas');
+                c.width = w;
+                c.height = h;
+                const ctx = c.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(img, 0, 0, w, h);
+                const out = c.toDataURL('image/jpeg', 0.85);
+                resolve({ mimeType: 'image/jpeg', base64: out.split(',')[1] || '' });
+              } catch (_e) {
+                resolve({ mimeType: 'image/jpeg', base64: (dataUrl.split(',')[1] || '') });
+              }
+            };
+            img.onerror = function() {
+              resolve({ mimeType: 'image/jpeg', base64: (dataUrl.split(',')[1] || '') });
+            };
+            img.src = dataUrl;
+          } catch (_e) {
+            resolve({ mimeType: 'image/jpeg', base64: (dataUrl.split(',')[1] || '') });
+          }
+        });
+      }
+
+      function arrayBufferToBase64(buf) {
+        const bytes = new Uint8Array(buf);
+        const chunk = 0x8000;
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        return btoa(binary);
+      }
+
+      async function tryParseWithSupabaseAi(payload) {
+        if (!isAiImportEnabled()) return { used: false };
+        if (typeof window.__sbGetAuthContext !== 'function') {
+          return { used: false, reason: 'Sin modulo de cuenta en la nube.' };
+        }
+        const auth = await window.__sbGetAuthContext();
+        if (!auth || !auth.token || !auth.url || !auth.apikey) {
+          showToast('Inicia sesion en Cuenta en la Nube para usar Lectura con IA. Usando lectura local.', 'ℹ️');
+          return { used: false, reason: 'Sin sesion activa.' };
+        }
+        try {
+          const resp = await fetch(auth.url + '/functions/v1/parse-movements', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + auth.token,
+              'apikey': auth.apikey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              mimeType: payload.mimeType,
+              base64: payload.base64,
+              fileName: payload.fileName || '',
+              selectedCard: payload.selectedCard || '',
+              cards: (state.cards || []).map(function(c) { return c.nombre_tarjeta; }),
+              categories: (state.categories || []).map(function(c) { return c.nombre_categoria; }),
+              referenceDate: getChileDateAndMonth().ymd
+            })
+          });
+          const data = await resp.json().catch(function() { return null; });
+          if (!resp.ok || !data || !Array.isArray(data.items)) {
+            const errMsg = (data && data.error) ? data.error : ('HTTP ' + resp.status);
+            throw new Error(errMsg);
+          }
+          return { used: true, items: data.items, tarjeta_detectada: data.tarjeta_detectada || '' };
+        } catch (err) {
+          console.warn('Lectura con IA no disponible, usando motor local:', err);
+          showToast('Lectura con IA no disponible (' + (err && err.message ? err.message : 'error de red') + '). Usando lectura local.', '⚠️');
+          return { used: false, error: err };
+        }
+      }
+
       // Subida de archivos PDF, CSV o Excel (.xlsx)
       document.getElementById('impFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -13684,6 +13802,30 @@
           const reader = new FileReader();
           reader.onload = async function(evt) {
             try {
+              if (isAiImportEnabled()) {
+                showToast('Analizando PDF con IA...', '📄');
+                const aiRes = await tryParseWithSupabaseAi({
+                  mimeType: 'application/pdf',
+                  base64: arrayBufferToBase64(evt.target.result),
+                  fileName: file.name,
+                  selectedCard: tarjeta
+                });
+                if (aiRes && aiRes.used) {
+                  if (aiRes.tarjeta_detectada && !state.userManuallySelectedImpCard) {
+                    const matchedCard = (state.cards || []).find(function(c) {
+                      return c.nombre_tarjeta.toLowerCase() === String(aiRes.tarjeta_detectada).trim().toLowerCase();
+                    });
+                    if (matchedCard) {
+                      tarjeta = matchedCard.nombre_tarjeta;
+                      applyDetectedCardToImportUI(tarjeta);
+                    }
+                  }
+                  const activeCardAi = document.getElementById('impTarjetaSelect').value || tarjeta;
+                  processRawImportedRows(aiRes.items, activeCardAi);
+                  showToast('PDF analizado con IA para ' + activeCardAi + ' (' + aiRes.items.length + ' movimientos detectados).', '📄');
+                  return;
+                }
+              }
               const structuredText = await extractStructuredLinesFromPdf(evt.target.result);
               const detCard = detectCardFromContentAndFilename(structuredText, fNameLow);
               if (detCard) {
@@ -13722,9 +13864,43 @@
         }
 
         const reader = new FileReader();
-        reader.onload = function(evt) {
+        reader.onload = async function(evt) {
           document.getElementById('uploadedImgPreview').src = evt.target.result;
           document.getElementById('imagePreviewPanel').classList.remove('hidden');
+
+          if (isAiImportEnabled()) {
+            const badge = document.getElementById('ocrStatusBadge');
+            if (badge) badge.textContent = 'Analizando imagen con IA...';
+            const compressed = await compressImageDataUrlForAi(evt.target.result, 1600);
+            const aiRes = await tryParseWithSupabaseAi({
+              mimeType: compressed.mimeType,
+              base64: compressed.base64,
+              fileName: file.name,
+              selectedCard: tarjeta
+            });
+            if (aiRes && aiRes.used) {
+              if (aiRes.tarjeta_detectada && !state.userManuallySelectedImpCard) {
+                const matchedCard = (state.cards || []).find(function(c) {
+                  return c.nombre_tarjeta.toLowerCase() === String(aiRes.tarjeta_detectada).trim().toLowerCase();
+                });
+                if (matchedCard) {
+                  tarjeta = matchedCard.nombre_tarjeta;
+                  applyDetectedCardToImportUI(tarjeta);
+                }
+              }
+              const activeCardAi = document.getElementById('impTarjetaSelect').value || tarjeta;
+              const pasteEl = document.getElementById('ocrPasteTextarea');
+              if (pasteEl) {
+                pasteEl.value = aiRes.items.map(function(it) {
+                  return [it.fecha || '', it.detalle || '', '$' + (it.monto || 0), (it.cuotas_totales > 1 ? ('Cuota ' + (it.cuota_actual || 1) + '/' + it.cuotas_totales) : '')].filter(Boolean).join(' | ');
+                }).join('\n');
+              }
+              if (badge) badge.textContent = 'Lectura con IA completada';
+              processRawImportedRows(aiRes.items, activeCardAi);
+              showToast('Imagen analizada con IA para ' + activeCardAi + ' (' + aiRes.items.length + ' movimientos extraidos).', '📸');
+              return;
+            }
+          }
 
           if (typeof Tesseract !== 'undefined') {
             document.getElementById('ocrStatusBadge').textContent = 'Optimizando y analizando imagen (OCR)...';
@@ -19014,6 +19190,12 @@
         }
         return sess;
       }
+
+      window.__sbGetAuthContext = async function() {
+        const sess = await ensureValidSbSession();
+        if (!sess || !sess.access_token) return null;
+        return { url: SB_URL, apikey: SB_KEY, token: sess.access_token };
+      };
 
       async function sbRestFetch(path, options) {
         const sess = await ensureValidSbSession();
