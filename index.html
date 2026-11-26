@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.0.0" />
-  <meta name="app-notes" content="Nuevo: respaldo online y sincronización multidispositivo por cuenta de usuario en Configuración, manteniendo intacto el modo offline y Google Sheets." />
+  <meta name="app-build" content="2.3.2" />
+  <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -1413,16 +1413,25 @@
 
             <!-- Comercio + Detalle opcional con autocompletado inteligente -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
+              <div id="fComercioWrap">
                 <label for="fDetalle" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Comercio</label>
                 <input type="text" id="fDetalle" list="merchantsDatalist" placeholder="Ej: Falabella, Acuenta, Lider..." required class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
                 <datalist id="merchantsDatalist"></datalist>
                 <p id="autoRuleHint" class="text-xs text-teal-700 mt-1 hidden"></p>
               </div>
-              <div>
-                <label for="fDetalleNota" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Detalle <span class="font-normal text-slate-400 normal-case">(opcional)</span></label>
+              <div id="fDetalleNotaWrap">
+                <label id="fDetalleNotaLbl" for="fDetalleNota" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Detalle <span class="font-normal text-slate-400 normal-case">(opcional)</span></label>
                 <input type="text" id="fDetalleNota" placeholder="Ej: Hidrolavadora, Regalo, Repuesto..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
               </div>
+            </div>
+
+            <!-- Bloque exclusivo para AHORRO (Operación: Aporte / Retiro, igual que en la sección Ahorros) -->
+            <div id="fAhorroOperacionWrap" class="hidden p-3.5 rounded-xl bg-sky-50 border border-sky-200">
+              <label for="fAhorroOperacion" class="block text-xs font-semibold text-sky-950 uppercase mb-1">Operación de Ahorro</label>
+              <select id="fAhorroOperacion" class="w-full rounded-xl border border-sky-300 px-3.5 py-2.5 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-sky-600">
+                <option value="APORTE" selected>➕ Aporte a Ahorro</option>
+                <option value="RETIRO">➖ Retiro / Uso de Ahorro</option>
+              </select>
             </div>
 
             <!-- Bloque exclusivo para INGRESO (Fuente de Ingreso visible justo antes de Medio de Pago y Tarjeta) -->
@@ -1430,18 +1439,20 @@
               <div>
                 <label for="fTipoIngreso" class="block text-xs font-semibold text-emerald-900 uppercase mb-1">Fuente de Ingreso / Devolución</label>
                 <select id="fTipoIngreso" class="w-full rounded-xl border border-emerald-300 px-3.5 py-2.5 text-sm font-semibold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                  <option value="Sueldo">💼 Sueldo</option>
+                  <option value="Ingreso">💵 Ingreso (Extra / Otros)</option>
                   <option value="Reembolso">💚 Reembolso (En Tarjeta de Crédito o Cuenta)</option>
                   <option value="Cashback">✨ Cashback (Abono a favor en Tarjeta o Cuenta)</option>
                   <option value="Devolución gasto personal">🔄 Devolución compras personales</option>
                 </select>
               </div>
-              <p class="text-[11px] text-emerald-800">💡 Elige abajo en <strong>Medio de Pago</strong> y <strong>Tarjeta / Cuenta</strong> si el reembolso entró a una tarjeta de crédito (ej. Lider, Tenpo) para que descuente automáticamente en su ciclo de facturación, o por transferencia.</p>
+              
             </div>
 
             <!-- Bloque de Medio de Pago, Tarjeta / Cuenta y Categoría -->
             <div id="blockGastoFields" class="space-y-4">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
+                <div id="fMedioPagoWrap">
                   <label for="fMedioPago" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Medio de Pago</label>
                   <select id="fMedioPago" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600">
                     <option value="Crédito">Crédito (Descuenta en Ciclo TC)</option>
@@ -1450,8 +1461,8 @@
                     <option value="Efectivo">Efectivo</option>
                   </select>
                 </div>
-                <div>
-                  <label for="fTarjeta" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tarjeta / Cuenta</label>
+                <div id="fTarjetaWrap">
+                  <label id="fTarjetaLbl" for="fTarjeta" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tarjeta / Cuenta</label>
                   <select id="fTarjeta" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"></select>
                 </div>
               </div>
@@ -1463,10 +1474,10 @@
 
               <div id="blockGastoCatCuotasRow" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label for="fCategoria" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Categoría</label>
+                  <label id="fCategoriaLbl" for="fCategoria" class="block text-xs font-semibold text-slate-600 uppercase mb-1">Categoría</label>
                   <select id="fCategoria" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"></select>
                 </div>
-                <div>
+                <div id="fCuotasWrap">
                   <label for="fCuotas" class="block text-xs font-semibold text-slate-600 uppercase mb-1" data-ui-key="lbl_cuotas">N° de Cuotas</label>
                   <div class="flex gap-2">
                     <select id="fCuotas" class="w-32 rounded-xl border border-slate-300 px-2.5 py-2.5 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-teal-600">
@@ -2173,6 +2184,12 @@
           </div>
         </div>
 
+        <!-- Filtro por Titular del Ahorro (Compartido vs Ahorros Propios) -->
+        <div id="savingsOwnerFilterBar" class="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200/80 rounded-xl p-2.5">
+          <div id="savingsOwnerPills" class="flex flex-wrap items-center gap-1.5"></div>
+          <div id="savingsOwnerTotalsStrip" class="flex flex-wrap items-center gap-2 text-[11px] text-slate-600"></div>
+        </div>
+
         <!-- 4 Tarjetas KPI de Ahorros -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1">
@@ -2214,9 +2231,12 @@
 
           <!-- Formulario para crear nueva Categoría de Ahorro -->
           <form id="addSavingsCategoryForm" class="p-3 rounded-xl bg-sky-50/70 border border-sky-200 space-y-2">
-            <label class="block text-[11px] font-bold text-sky-950 uppercase">➕ Crear Nueva Categoría de Ahorro</label>
-            <div class="flex gap-2">
-              <input type="text" id="newSavCatNameInput" placeholder="Ej: Pie de Casa, Vacaciones, Inversión..." required class="flex-1 rounded-xl border border-sky-300 px-3 py-1.5 text-xs bg-white font-semibold text-slate-800" />
+            <label class="block text-[11px] font-bold text-sky-950 uppercase">➕ Crear y Administrar Bolsillos de Ahorro</label>
+            <div class="flex flex-wrap sm:flex-nowrap gap-2">
+              <input type="text" id="newSavCatNameInput" placeholder="Ej: Pie de Casa, Vacaciones, Fondo personal..." required class="flex-1 min-w-[160px] rounded-xl border border-sky-300 px-3 py-1.5 text-xs bg-white font-semibold text-slate-800" />
+              <select id="newSavCatOwnerSelect" title="Titular del bolsillo" class="rounded-xl border border-sky-300 px-2.5 py-1.5 text-xs bg-white font-semibold text-slate-800">
+                <option value="Presupuesto">🤝 Compartido</option>
+              </select>
               <button type="submit" class="px-3 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold transition shadow-sm whitespace-nowrap">
                 + Crear
               </button>
@@ -2658,7 +2678,7 @@
           <p id="sbSyncLogText" class="text-[11px] text-slate-500"></p>
         </div>
       </div>
-      <div id="subsec-cfg-sync" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
+      <div id="subsec-cfg-sync" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 class="text-base font-bold text-slate-900">☁️ Sincronización Multi-Dispositivo (Apps Script)</h2>
@@ -3152,7 +3172,7 @@
 
   <!-- MOBILE SLIDE-OUT SIDE DRAWER (Todas las secciones + Personalizar barra diaria + Respaldo local) -->
   <div id="mobileDrawerBackdrop" class="fixed inset-0 bg-slate-900/55 backdrop-blur-[1px] z-40 hidden opacity-0"></div>
-  <aside id="mobileSideDrawer" aria-label="Menú lateral de secciones" class="fixed top-0 left-0 bottom-0 w-[84vw] max-w-[320px] bg-white z-50 shadow-2xl border-r border-slate-200 transform -translate-x-full flex flex-col overflow-hidden">
+  <aside id="mobileSideDrawer" aria-label="Menú lateral de secciones" class="fixed top-0 right-0 bottom-0 w-[84vw] max-w-[320px] bg-white z-50 shadow-2xl border-l border-slate-200 transform translate-x-full flex flex-col overflow-hidden">
     <div class="bg-[#1B365D] text-white px-4 py-3.5 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-2.5 min-w-0">
         <div class="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center font-bold text-sm shrink-0">FP</div>
@@ -5574,12 +5594,17 @@
         } else if (tipo === 'Ahorro' || cat === 'Ahorro' || cat === 'AHORRO_CUENTA') {
           const isRet = (monto < 0) || (tipoIng === 'Retiro ahorro');
           const absAmt = Math.abs(monto);
-          if (isRet) {
-            b.ahorro_retiros += absAmt;
-          } else {
-            b.ahorro_aportes += absAmt;
+          const pSavRaw = String(m.persona || 'Presupuesto').trim();
+          const pSavLow = pSavRaw.toLowerCase();
+          const isFamilySav = (!pSavRaw || pSavLow === 'presupuesto' || pSavLow === 'familiar' || pSavLow === 'compartido' || pSavLow === 'ambos');
+          if (isFamilySav) {
+            if (isRet) {
+              b.ahorro_retiros += absAmt;
+            } else {
+              b.ahorro_aportes += absAmt;
+            }
+            b.ahorro_neto = b.ahorro_aportes - b.ahorro_retiros;
           }
-          b.ahorro_neto = b.ahorro_aportes - b.ahorro_retiros;
           b.ahorro_items.push({
             id: m.id_movimiento,
             fecha: String(m.fecha_compra).slice(0, 10),
@@ -8399,25 +8424,104 @@
       }
     }
 
+    function isSharedSavingsOwner(personaVal) {
+      const p = String(personaVal || 'Presupuesto').trim().toLowerCase();
+      return (!p || p === 'presupuesto' || p === 'familiar' || p === 'compartido' || p === 'ambos');
+    }
+
     function renderSavingsView(byMonth, curM) {
-      const savMovs = state.movimientos.filter(function(m) {
+      const allSavMovs = state.movimientos.filter(function(m) {
         return m.tipo_movimiento === 'Ahorro' || m.grupo_presupuesto === 'Ahorro' || m.categoria === 'Ahorro' || m.categoria === 'AHORRO_CUENTA';
       });
       const badgeEl = document.getElementById('navAhorrosBadge');
-      if (badgeEl) badgeEl.textContent = savMovs.length;
+      if (badgeEl) badgeEl.textContent = allSavMovs.length;
+
+      if (!state._savOwnerFilter) state._savOwnerFilter = 'ALL';
+      const savPeopleNames = (Array.isArray(state.personalPeople) ? state.personalPeople : [])
+        .filter(function(p) { return p && p.nombre && p.mostrar_en_seccion !== false; })
+        .map(function(p) { return String(p.nombre).trim(); });
+
+      const ownerTotals = { SHARED: 0 };
+      savPeopleNames.forEach(function(n) { ownerTotals[n] = 0; });
+      allSavMovs.forEach(function(m) {
+        const isRet = Number(m.monto || 0) < 0 || m.tipo_ingreso === 'Retiro ahorro';
+        const signed = isRet ? -Math.abs(Number(m.monto || 0)) : Math.abs(Number(m.monto || 0));
+        if (isSharedSavingsOwner(m.persona)) {
+          ownerTotals.SHARED += signed;
+        } else {
+          const pn = String(m.persona || '').trim();
+          ownerTotals[pn] = (ownerTotals[pn] || 0) + signed;
+        }
+      });
+
+      const ownerPillsEl = document.getElementById('savingsOwnerPills');
+      const ownerStripEl = document.getElementById('savingsOwnerTotalsStrip');
+      if (ownerPillsEl) {
+        const pillItems = [{ id: 'ALL', label: 'Todos' }, { id: 'SHARED', label: '🤝 Compartido' }]
+          .concat(savPeopleNames.map(function(n) { return { id: n, label: '👤 ' + n }; }));
+        ownerPillsEl.innerHTML = pillItems.map(function(o) {
+          const act = state._savOwnerFilter === o.id;
+          return '<button type="button" data-sav-owner-filter="' + escapeHtml(o.id) + '" class="px-2.5 py-1 rounded-full text-[11px] font-bold transition border ' +
+            (act ? 'bg-[#0A2558] text-white border-[#0A2558] shadow-xs' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100') +
+            '">' + escapeHtml(o.label) + '</button>';
+        }).join('');
+        if (!ownerPillsEl._boundOwnerFilter) {
+          ownerPillsEl._boundOwnerFilter = true;
+          ownerPillsEl.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-sav-owner-filter]');
+            if (!btn) return;
+            state._savOwnerFilter = btn.getAttribute('data-sav-owner-filter') || 'ALL';
+            const fp = document.getElementById('savFormPersona');
+            if (fp) {
+              fp.value = (state._savOwnerFilter === 'SHARED' || state._savOwnerFilter === 'ALL') ? 'Presupuesto' : state._savOwnerFilter;
+            }
+            const agg = state._lastAggregates || computeAggregates();
+            renderSavingsView(agg.byMonth, state.selectedMonth);
+          });
+        }
+      }
+      if (ownerStripEl) {
+        const stripParts = ['<span>🤝 Compartido: <strong class="text-slate-900">' + formatCLP(ownerTotals.SHARED || 0) + '</strong></span>'];
+        savPeopleNames.forEach(function(n) {
+          stripParts.push('<span>👤 ' + escapeHtml(n) + ': <strong class="text-slate-900">' + formatCLP(ownerTotals[n] || 0) + '</strong></span>');
+        });
+        ownerStripEl.innerHTML = stripParts.join('<span class="text-slate-300">•</span>');
+      }
+
+      const savMovs = allSavMovs.filter(function(m) {
+        if (state._savOwnerFilter === 'ALL') return true;
+        if (state._savOwnerFilter === 'SHARED') return isSharedSavingsOwner(m.persona);
+        return String(m.persona || '').trim() === state._savOwnerFilter;
+      });
 
       // Píldoras y selector de categorías de ahorro (SOLO las categorías creadas en esta sección, jamás los detalles)
       const userSavCats = getUserSavingsCategories();
 
+      const newOwnerSel = document.getElementById('newSavCatOwnerSelect');
+      if (newOwnerSel) {
+        const prevOwnerVal = newOwnerSel.value || 'Presupuesto';
+        newOwnerSel.innerHTML = '<option value="Presupuesto">🤝 Compartido (Presupuesto)</option>' +
+          savPeopleNames.map(function(n) { return '<option value="' + escapeHtml(n) + '">👤 ' + escapeHtml(n) + '</option>'; }).join('');
+        if (Array.from(newOwnerSel.options).some(function(o) { return o.value === prevOwnerVal; })) {
+          newOwnerSel.value = prevOwnerVal;
+        }
+      }
       const pillsEl = document.getElementById('savingsCategoriesPills');
       if (pillsEl) {
+        const ownersMap = (state.savingsConfig && state.savingsConfig.savingsPocketOwners) ? state.savingsConfig.savingsPocketOwners : {};
         pillsEl.innerHTML = state.savingsConfig.savingsCategories.map(function(catName) {
           const isDefault20 = (catName.toLowerCase() === 'ahorro 20 porciento');
+          const pOwner = ownersMap[catName] || 'Presupuesto';
+          const ownerTag = isSharedSavingsOwner(pOwner) ? '🤝' : ('👤 ' + pOwner);
           return '<div class="inline-flex items-center gap-1 rounded-lg bg-white border border-sky-200 px-2.5 py-1 text-[11px] font-semibold text-sky-950 shadow-sm">' +
             '<button type="button" data-sav-preset="' + escapeHtml(catName) + '" class="sav-preset-btn hover:text-sky-700">🏦 ' + escapeHtml(catName) + '</button>' +
-            (!isDefault20 ? '<button type="button" data-del-sav-cat="' + escapeHtml(catName) + '" class="del-sav-cat-btn text-rose-500 hover:text-rose-700 font-bold ml-1" title="Eliminar categoría de ahorro">✕</button>' : '') +
+            '<span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200/70">' + escapeHtml(ownerTag) + '</span>' +
+            (!isDefault20 ? '<button type="button" data-del-sav-cat="' + escapeHtml(catName) + '" class="del-sav-cat-btn text-rose-500 hover:text-rose-700 font-bold ml-0.5" title="Eliminar bolsillo">✕</button>' : '') +
           '</div>';
         }).join('');
+      }
+      if (typeof syncSavingsPocketSelectsByOwner === 'function') {
+        syncSavingsPocketSelectsByOwner();
       }
 
       const savCatSel = document.getElementById('savFormCategorySelect');
@@ -8435,9 +8539,14 @@
       const savTarSel = document.getElementById('savFormTarjeta');
       if (savTarSel && document.activeElement !== savTarSel) {
         const prevT = savTarSel.value || state.defaultCardByType['Débito'] || 'Mach';
-        savTarSel.innerHTML = state.cards.map(function(c) {
+        const nonCreditCards = (state.cards || []).filter(function(c) { return c && c.tipo_medio !== 'Crédito'; });
+        savTarSel.innerHTML = nonCreditCards.map(function(c) {
           return '<option value="' + escapeHtml(c.nombre_tarjeta) + '">' + escapeHtml(c.nombre_tarjeta) + ' (' + escapeHtml(c.tipo_medio) + ')</option>';
-        }).concat(['<option value="Cuenta Ahorro / Banco">Cuenta Ahorro / Banco</option>']).join('');
+        }).concat([
+          '<option value="Cuenta Ahorro / Banco">🏦 Cuenta Ahorro / Banco</option>',
+          '<option value="Efectivo">💵 Efectivo</option>',
+          '<option value="No aplica">🔄 No aplica</option>'
+        ]).join('');
         if (Array.from(savTarSel.options).some(function(o) { return o.value === prevT; })) {
           savTarSel.value = prevT;
         }
@@ -8511,19 +8620,34 @@
         byAccountMap[accKey] = (byAccountMap[accKey] || 0) + signedAmt;
       });
 
-      const totalFondoAcumulado = initBal + totalHistAportes - totalHistRetiros;
-      const curBucket = byMonth[curM] || createEmptyMonthBucket(curM);
-      const mesNeto = Number(curBucket.ahorro_neto || 0);
-      const mesCount = (curBucket.ahorro_items || []).length;
+      const effInitBal = (state._savOwnerFilter === 'ALL' || state._savOwnerFilter === 'SHARED') ? initBal : 0;
+      const totalFondoAcumulado = effInitBal + totalHistAportes - totalHistRetiros;
       const activeY = curM.slice(0, 4);
+      const curYM = curM.slice(0, 7);
+      const savFilteredByMonth = {};
+      savMovs.forEach(function(m) {
+        const ym = String(m.mes_imputacion || m.fecha_compra || '').slice(0, 7);
+        if (!ym) return;
+        const mk = ym + '-01';
+        if (!savFilteredByMonth[mk]) savFilteredByMonth[mk] = { aportes: 0, retiros: 0, neto: 0, count: 0 };
+        const isRet = Number(m.monto || 0) < 0 || m.tipo_ingreso === 'Retiro ahorro';
+        const absA = Math.abs(Number(m.monto || 0));
+        if (isRet) savFilteredByMonth[mk].retiros += absA;
+        else savFilteredByMonth[mk].aportes += absA;
+        savFilteredByMonth[mk].neto = savFilteredByMonth[mk].aportes - savFilteredByMonth[mk].retiros;
+        savFilteredByMonth[mk].count += 1;
+      });
+      const curSavB = savFilteredByMonth[curYM + '-01'] || { aportes: 0, retiros: 0, neto: 0, count: 0 };
+      const mesNeto = Number(curSavB.neto || 0);
+      const mesCount = Number(curSavB.count || 0);
 
       let anioNeto = 0;
       let monthsWithSavingsInYear = 0;
       for (let m = 1; m <= 12; m++) {
         const mk = activeY + '-' + String(m).padStart(2, '0') + '-01';
-        const mb = byMonth[mk];
-        if (mb && (mb.ahorro_aportes > 0 || mb.ahorro_retiros > 0)) {
-          anioNeto += mb.ahorro_neto;
+        const sb = savFilteredByMonth[mk];
+        if (sb && (sb.aportes > 0 || sb.retiros > 0)) {
+          anioNeto += sb.neto;
           monthsWithSavingsInYear++;
         }
       }
@@ -11037,8 +11161,10 @@
           ].join('');
         } else if (it.isSavings) {
           catOptions = '<option value="AHORRO_CUENTA" selected>🏦 Ahorro</option>';
-        } else if (it.isTransferIn) {
+        } else if (it.isTransferIn || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO') {
           catOptions = [
+            '<option value="INGRESO_SUELDO"' + (it.categoria === 'INGRESO_SUELDO' ? ' selected' : '') + '>💼 Ingreso: Sueldo</option>',
+            '<option value="INGRESO_OTRO"' + (it.categoria === 'INGRESO_OTRO' ? ' selected' : '') + '>💵 Ingreso (Extra / Otros)</option>',
             '<option value="INGRESO_TRANSFERENCIA"' + (it.categoria === 'INGRESO_TRANSFERENCIA' ? ' selected' : '') + '>📥 Ingreso: Transferencia Recibida</option>',
             '<option value="REEMBOLSO_DEVOLUCION"' + (it.categoria === 'REEMBOLSO_DEVOLUCION' ? ' selected' : '') + '>💚 Reembolso / Devolución</option>'
           ].join('');
@@ -11100,8 +11226,10 @@
           '<td class="p-2.5 min-w-[210px]">' + diagHtml + '</td>' +
           '<td class="p-2.5"><input type="date" data-rev-field="fecha_compra" data-rev-idx="' + it.idx + '" value="' + escapeHtml(it.fecha_compra) + '" class="rev-input rounded-lg border border-slate-300 px-2 py-1 text-xs bg-white" />' + fechaExtra + '</td>' +
           '<td class="p-2.5 min-w-[200px] space-y-1">' +
-            '<input type="text" data-rev-field="detalle" data-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle) + '" placeholder="Comercio (ej: Falabella)..." class="rev-input rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-900 w-full bg-white" />' +
-            '<input type="text" data-rev-field="detalle_extra" data-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle_extra || '') + '" placeholder="Detalle opcional (ej: Hidrolavadora)..." class="rev-input rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] text-slate-700 w-full bg-slate-50" />' +
+            ((it.isSavings || it.categoria === 'AHORRO_CUENTA' || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO')
+              ? '<input type="text" data-rev-field="detalle" data-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle) + '" placeholder="Detalle..." class="rev-input rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-900 w-full bg-white" />'
+              : ('<input type="text" data-rev-field="detalle" data-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle) + '" placeholder="Comercio (ej: Falabella)..." class="rev-input rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-900 w-full bg-white" />' +
+                 '<input type="text" data-rev-field="detalle_extra" data-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle_extra || '') + '" placeholder="Detalle opcional (ej: Hidrolavadora)..." class="rev-input rounded-lg border border-slate-200 px-2.5 py-1 text-[11px] text-slate-700 w-full bg-slate-50" />')) +
             '<div class="flex items-center justify-between gap-2 text-[10px] text-slate-500">' +
               '<span class="truncate max-w-[140px]" title="Glosa cartola: ' + escapeHtml(it.raw_detalle) + '">Glosa: ' + escapeHtml(it.raw_detalle) + '</span>' +
               '<label class="flex items-center gap-1 text-teal-800 font-semibold cursor-pointer whitespace-nowrap" title="Guarda este nombre para asignarlo automáticamente en futuros estados de cuenta">' +
@@ -12671,10 +12799,16 @@
           const inp = document.getElementById('newSavCatNameInput');
           const name = (inp ? inp.value : '').trim();
           if (!name) return;
+          const ownerSel = document.getElementById('newSavCatOwnerSelect');
+          const ownerVal = (ownerSel && ownerSel.value) ? ownerSel.value : 'Presupuesto';
+          if (!state.savingsConfig.savingsPocketOwners || typeof state.savingsConfig.savingsPocketOwners !== 'object') {
+            state.savingsConfig.savingsPocketOwners = {};
+          }
           const savCats = getUserSavingsCategories();
           if (!savCats.some(function(c) { return c.toLowerCase() === name.toLowerCase(); })) {
             state.savingsConfig.savingsCategories.push(name);
           }
+          state.savingsConfig.savingsPocketOwners[name] = ownerVal;
           if (inp) inp.value = '';
           renderDropdowns();
           renderAllViews();
@@ -13090,6 +13224,18 @@
       document.querySelectorAll('.tipo-mov-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
           const t = btn.getAttribute('data-tipo');
+          if (t === 'Ahorro') {
+            switchTab('tab-ahorros');
+            setTimeout(function() {
+              const qForm = document.getElementById('quickSavingsForm');
+              if (qForm && typeof qForm.scrollIntoView === 'function') {
+                qForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+              const mInp = document.getElementById('savFormMonto');
+              if (mInp) { try { mInp.focus(); } catch (_e) {} }
+            }, 90);
+            return;
+          }
           document.getElementById('fTipoMov').value = t;
           document.querySelectorAll('.tipo-mov-btn').forEach(function(b) {
             b.classList.remove('pill-active');
@@ -13119,6 +13265,7 @@
           }
           renderDropdowns();
           syncPersonaOptionsForCategory();
+          if (typeof syncRegistroFieldsByTipoAndFuente === 'function') syncRegistroFieldsByTipoAndFuente();
           updateLiveFormPreview();
         });
       });
@@ -13215,12 +13362,12 @@
         e.preventDefault();
         const tipoMov = document.getElementById('fTipoMov').value;
         const fecha = document.getElementById('fFechaCompra').value;
-        const montoInput = Math.round(Number(document.getElementById('fMonto').value || 0));
-        const _comercioIn = document.getElementById('fDetalle').value.trim(); const _notaIn = document.getElementById('fDetalleNota') ? document.getElementById('fDetalleNota').value.trim() : ''; const detalle = _notaIn ? (_comercioIn + ' — ' + _notaIn) : _comercioIn;
+        const _rawMontoIn = Math.round(Number(document.getElementById('fMonto').value || 0)); const _isSavRetPre = (tipoMov === 'Ahorro' && document.getElementById('fAhorroOperacion') && document.getElementById('fAhorroOperacion').value === 'RETIRO'); const montoInput = _isSavRetPre ? -Math.abs(_rawMontoIn) : _rawMontoIn;
+        const _comercioWrapHidden = document.getElementById('fComercioWrap') && document.getElementById('fComercioWrap').classList.contains('hidden'); const _comercioIn = _comercioWrapHidden ? '' : document.getElementById('fDetalle').value.trim(); const _notaIn = document.getElementById('fDetalleNota') ? document.getElementById('fDetalleNota').value.trim() : ''; const _fallbackDet = (tipoMov === 'Ahorro') ? (document.getElementById('fCategoria').value || 'Ahorro') : (document.getElementById('fTipoIngreso') ? document.getElementById('fTipoIngreso').value : 'Ingreso'); const detalle = _comercioWrapHidden ? (_notaIn || _fallbackDet) : (_notaIn ? (_comercioIn + ' — ' + _notaIn) : _comercioIn);
         const medioPago = document.getElementById('fMedioPago').value || (tipoMov === 'Ingreso' ? 'Transferencia' : 'Débito');
         const tarjeta = document.getElementById('fTarjeta').value || (tipoMov === 'Ingreso' ? 'No aplica' : 'Mach');
         const categoria = tipoMov === 'Ingreso' ? 'Ingreso' : (document.getElementById('fCategoria').value || (tipoMov === 'Ahorro' ? (getUserSavingsCategories()[0] || 'Ahorro 20 porciento') : 'Comida/Supermercado'));
-        const tipoIngreso = tipoMov === 'Ingreso' ? document.getElementById('fTipoIngreso').value : 'No aplica';
+        const _isSavRet = (tipoMov === 'Ahorro' && document.getElementById('fAhorroOperacion') && document.getElementById('fAhorroOperacion').value === 'RETIRO'); const tipoIngreso = tipoMov === 'Ingreso' ? document.getElementById('fTipoIngreso').value : (_isSavRet ? 'Retiro ahorro' : 'No aplica');
         const persona = document.getElementById('fPersona').value;
         const rawCuotasSel = document.getElementById('fCuotas').value;
         const isSinCuotas = (tipoMov !== 'Gasto' || rawCuotasSel === 'Sin cuotas');
@@ -13822,12 +13969,12 @@
 
           const isSavingsMov = Boolean(it.isSavings || it.categoria === 'AHORRO_CUENTA' || it.categoria === 'Ahorro' || /^ahorro\s*20\b/i.test(String(it.detalle || '').trim()));
           const isRefundMov = Boolean(!isSavingsMov && (it.isRefund || it.categoria === 'REEMBOLSO_DEVOLUCION' || it.categoria === 'REEMBOLSO_CASHBACK'));
-          const isIncomeTransfer = Boolean(!isSavingsMov && !isRefundMov && (it.isTransferIn || it.categoria === 'INGRESO_TRANSFERENCIA'));
+          const isIncomeTransfer = Boolean(!isSavingsMov && !isRefundMov && (it.isTransferIn || it.categoria === 'INGRESO_TRANSFERENCIA' || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO'));
           const tipoMov = isSavingsMov ? 'Ahorro' : ((isRefundMov || isIncomeTransfer) ? 'Ingreso' : 'Gasto');
           const pTarget = (it.persona === 'Familiar' || !it.persona) ? 'Presupuesto' : it.persona;
           const tipoIng = isRefundMov
             ? (it.categoria === 'REEMBOLSO_CASHBACK' ? 'Cashback' : (pTarget === 'Presupuesto' ? 'Reembolso' : 'Devolución gasto personal'))
-            : (isIncomeTransfer ? (pTarget === 'Presupuesto' ? 'Reembolso' : 'Devolución gasto personal') : 'No aplica');
+            : (it.categoria === 'INGRESO_SUELDO' ? 'Sueldo' : (it.categoria === 'INGRESO_OTRO' ? 'Ingreso' : (isIncomeTransfer ? (pTarget === 'Presupuesto' ? 'Reembolso' : 'Devolución gasto personal') : 'No aplica')));
           const finalCat = isSavingsMov ? 'Ahorro' : ((isRefundMov || isIncomeTransfer) ? 'Ingreso' : it.categoria);
           const esPers = finalCat === 'Gasto personal';
 
@@ -14012,7 +14159,7 @@
         selected.forEach(function(it) {
           const isSavingsMov = Boolean(it.isSavings || it.categoria === 'AHORRO_CUENTA' || it.categoria === 'Ahorro');
           const isRefundMov = Boolean(!isSavingsMov && (it.isRefund || it.categoria === 'REEMBOLSO_DEVOLUCION' || it.categoria === 'REEMBOLSO_CASHBACK'));
-          const isIncomeTransfer = Boolean(!isSavingsMov && !isRefundMov && (it.isTransferIn || it.categoria === 'INGRESO_TRANSFERENCIA'));
+          const isIncomeTransfer = Boolean(!isSavingsMov && !isRefundMov && (it.isTransferIn || it.categoria === 'INGRESO_TRANSFERENCIA' || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO'));
           const totalC = (!isRefundMov && !isSavingsMov && !isIncomeTransfer && Number(it.cuotas_totales || 1) > 1) ? Number(it.cuotas_totales) : 1;
           if (totalC > 1) {
             const sInfo = checkInstallmentSeriesInHistory(it, selected);
@@ -15814,8 +15961,10 @@
           '<option value="REEMBOLSO_CASHBACK"' + (it.categoria === 'REEMBOLSO_CASHBACK' ? ' selected' : '') + '>✨ Cashback / Abono</option>';
       } else if (it.isSavings) {
         catOptions = '<option value="AHORRO_CUENTA" selected>🏦 Ahorro</option>';
-      } else if (it.isTransferIn) {
-        catOptions = '<option value="INGRESO_TRANSFERENCIA"' + (it.categoria === 'INGRESO_TRANSFERENCIA' ? ' selected' : '') + '>📥 Transferencia Recibida</option>' +
+      } else if (it.isTransferIn || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO') {
+        catOptions = '<option value="INGRESO_SUELDO"' + (it.categoria === 'INGRESO_SUELDO' ? ' selected' : '') + '>💼 Ingreso: Sueldo</option>' +
+          '<option value="INGRESO_OTRO"' + (it.categoria === 'INGRESO_OTRO' ? ' selected' : '') + '>💵 Ingreso (Extra / Otros)</option>' +
+          '<option value="INGRESO_TRANSFERENCIA"' + (it.categoria === 'INGRESO_TRANSFERENCIA' ? ' selected' : '') + '>📥 Transferencia Recibida</option>' +
           '<option value="REEMBOLSO_DEVOLUCION"' + (it.categoria === 'REEMBOLSO_DEVOLUCION' ? ' selected' : '') + '>💚 Reembolso / Devolución</option>';
       } else {
         const prefixOpts = (it.isTransferOut || it.categoria === 'POR_CATEGORIZAR')
@@ -15860,14 +16009,19 @@
           '<!-- Campos editables -->' +
           '<div class="space-y-2.5">' +
             '<div class="space-y-2">' +
-              '<div>' +
-                '<label class="block text-[11px] font-bold text-slate-600 mb-1">Comercio</label>' +
-                '<input type="text" data-card-rev-field="detalle" data-card-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle) + '" placeholder="Ej: Falabella, Acuenta..." class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-900 bg-white" />' +
-              '</div>' +
-              '<div>' +
-                '<label class="block text-[11px] font-bold text-slate-600 mb-1">Detalle <span class="font-normal text-slate-400">(opcional)</span></label>' +
-                '<input type="text" data-card-rev-field="detalle_extra" data-card-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle_extra || '') + '" placeholder="Ej: Hidrolavadora, Regalo..." class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-800 bg-white" />' +
-              '</div>' +
+              ((it.isSavings || it.categoria === 'AHORRO_CUENTA' || it.categoria === 'INGRESO_SUELDO' || it.categoria === 'INGRESO_OTRO')
+                ? ('<div>' +
+                    '<label class="block text-[11px] font-bold text-slate-600 mb-1">Detalle</label>' +
+                    '<input type="text" data-card-rev-field="detalle" data-card-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle) + '" placeholder="Ej: Aporte mensual, Sueldo, Bono..." class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-900 bg-white" />' +
+                  '</div>')
+                : ('<div>' +
+                    '<label class="block text-[11px] font-bold text-slate-600 mb-1">Comercio</label>' +
+                    '<input type="text" data-card-rev-field="detalle" data-card-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle) + '" placeholder="Ej: Falabella, Acuenta..." class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-900 bg-white" />' +
+                  '</div>' +
+                  '<div>' +
+                    '<label class="block text-[11px] font-bold text-slate-600 mb-1">Detalle <span class="font-normal text-slate-400">(opcional)</span></label>' +
+                    '<input type="text" data-card-rev-field="detalle_extra" data-card-rev-idx="' + it.idx + '" value="' + escapeHtml(it.detalle_extra || '') + '" placeholder="Ej: Hidrolavadora, Regalo..." class="w-full rounded-xl border border-slate-300 px-3 py-1.5 text-xs text-slate-800 bg-white" />' +
+                  '</div>')) +
               '<div class="flex items-center justify-between gap-2 text-[10px] text-slate-500">' +
                 '<span class="truncate">Glosa: ' + escapeHtml(it.raw_detalle || '') + '</span>' +
                 '<label class="inline-flex items-center gap-1 text-teal-800 font-semibold whitespace-nowrap"><input type="checkbox" data-card-rev-field="saveRule" data-card-rev-idx="' + it.idx + '" ' + (it.saveRule ? 'checked' : '') + ' class="rounded accent-teal-600" /> Recordar futuro</label>' +
@@ -16206,7 +16360,7 @@
     const DISMISSED_TIPS_KEY = 'finanzas_movil_dismissed_tips_v1';
 
     const SECTION_INTRO_GUIDES = {
-      'tab-registro': '➕ Ingresa gastos, ingresos o cuotas con Comercio y Detalle opcional. Los botones rápidos pre-rellenan tus compras frecuentes en un toque.',
+      'tab-registro': '➕ Ingresa gastos, ingresos, devoluciones o aportes/retiros de ahorro. En reembolsos a tarjeta de crédito elige Crédito y tu tarjeta para descontar de su ciclo; usa los botones rápidos para compras frecuentes.',
       'tab-importar': '📄 Sube una cartola (PDF, Excel, CSV) o captura de pantalla (Tenpo, Lider, MercadoPago). Puedes revisar 1 a 1 o en tabla antes de guardar.',
       'tab-presupuesto': '📊 Presupuesto Mensual compara tus topes de Gastos Fijos y Supermercado por mes; Flujo de Caja calcula tu excedente (Ingresos − Egresos − Ahorro). Toca cualquier mes o fila para ver su desglose.',
       'tab-analisis': '🔬 Revisa tu salud financiera anual o mensual, comercios principales y patrones por día. Al final puedes desplegar Gastos Personales, Gastos Hormiga y el Simulador de ahorro.',
@@ -19258,6 +19412,182 @@
       } else {
         bindSupabaseEvents();
       }
+    })();
+
+    // =========================================================================
+    // CAMPOS CONTEXTUALES EN REGISTRO (AHORRO SIN COMERCIO/CUOTAS, SUELDO/INGRESO SIN COMERCIO Y SOLO TRANSFERENCIA/EFECTIVO)
+    // =========================================================================
+    function syncRegistroFieldsByTipoAndFuente() {
+      const tipo = document.getElementById('fTipoMov') ? document.getElementById('fTipoMov').value : 'Gasto';
+      const tipoIng = document.getElementById('fTipoIngreso') ? document.getElementById('fTipoIngreso').value : '';
+      const comWrap = document.getElementById('fComercioWrap');
+      const detWrap = document.getElementById('fDetalleNotaWrap');
+      const detLbl = document.getElementById('fDetalleNotaLbl');
+      const detInp = document.getElementById('fDetalleNota');
+      const fDetEl = document.getElementById('fDetalle');
+      const cuoWrap = document.getElementById('fCuotasWrap');
+      const cuoEl = document.getElementById('fCuotas');
+      const tarjWrap = document.getElementById('fTarjetaWrap');
+      const medioEl = document.getElementById('fMedioPago');
+
+      const isAhorro = (tipo === 'Ahorro');
+      const isDirectIncome = (tipo === 'Ingreso' && (tipoIng === 'Sueldo' || tipoIng === 'Ingreso'));
+      const hideComercio = isAhorro || isDirectIncome;
+
+      if (comWrap) comWrap.classList.toggle('hidden', hideComercio);
+      if (fDetEl) fDetEl.required = !hideComercio;
+      if (detWrap) detWrap.classList.toggle('sm:col-span-2', hideComercio);
+      if (detLbl) {
+        detLbl.innerHTML = hideComercio
+          ? 'Detalle <span class="font-normal text-slate-400 normal-case">(opcional)</span>'
+          : 'Detalle <span class="font-normal text-slate-400 normal-case">(opcional)</span>';
+      }
+      if (detInp) {
+        detInp.placeholder = isAhorro
+          ? 'Ej: Aporte mensual, Reserva, Fondo...'
+          : (isDirectIncome ? 'Ej: Sueldo Noviembre, Bono, Venta...' : 'Ej: Hidrolavadora, Regalo, Repuesto...');
+      }
+
+      const mpWrap = document.getElementById('fMedioPagoWrap');
+      const tarjLbl = document.getElementById('fTarjetaLbl');
+      const catLbl = document.getElementById('fCategoriaLbl');
+
+      if (cuoWrap) cuoWrap.classList.toggle('hidden', isAhorro);
+      if (isAhorro && cuoEl) cuoEl.value = 'Sin cuotas';
+
+      if (mpWrap) mpWrap.classList.toggle('hidden', isAhorro);
+      if (tarjLbl) tarjLbl.textContent = isAhorro ? 'Cuenta / Dónde está' : 'Tarjeta / Cuenta';
+      if (catLbl) catLbl.textContent = isAhorro ? 'Bolsillo de Ahorro' : 'Categoría';
+
+      if (medioEl) {
+        if (isAhorro) {
+          medioEl.value = 'Transferencia';
+        } else {
+          Array.from(medioEl.options || []).forEach(function(opt) {
+            const isAllowed = !isDirectIncome || (opt.value === 'Transferencia' || opt.value === 'Efectivo');
+            opt.hidden = !isAllowed;
+            opt.disabled = !isAllowed;
+          });
+          if (isDirectIncome && medioEl.value !== 'Transferencia' && medioEl.value !== 'Efectivo') {
+            medioEl.value = 'Transferencia';
+          }
+        }
+      }
+      const ahOpWrap = document.getElementById('fAhorroOperacionWrap');
+      if (ahOpWrap) ahOpWrap.classList.toggle('hidden', !isAhorro);
+      const calcPrev = document.getElementById('liveCalcPreview');
+      if (calcPrev) calcPrev.classList.toggle('hidden', isAhorro);
+
+      if (tarjWrap) {
+        tarjWrap.classList.toggle('hidden', isDirectIncome);
+        tarjWrap.classList.toggle('sm:col-span-2', isAhorro);
+      }
+      if (isAhorro) {
+        const fTarSel = document.getElementById('fTarjeta');
+        if (fTarSel) {
+          const prevVal = fTarSel.value;
+          const nonCredit = (state.cards || []).filter(function(c) { return c && c.tipo_medio !== 'Crédito'; });
+          fTarSel.innerHTML = nonCredit.map(function(c) {
+            return '<option value="' + escapeHtml(c.nombre_tarjeta) + '">' + escapeHtml(c.nombre_tarjeta) + ' (' + escapeHtml(c.tipo_medio) + ')</option>';
+          }).concat([
+            '<option value="Cuenta Ahorro / Banco">🏦 Cuenta Ahorro / Banco</option>',
+            '<option value="Efectivo">💵 Efectivo</option>',
+            '<option value="No aplica">🔄 No aplica</option>'
+          ]).join('');
+          if (Array.from(fTarSel.options).some(function(o) { return o.value === prevVal; })) {
+            fTarSel.value = prevVal;
+          }
+        }
+      }
+      if (typeof syncSavingsPocketSelectsByOwner === 'function') {
+        syncSavingsPocketSelectsByOwner();
+      }
+    }
+
+    (function bindRegistroContextualFields() {
+      const fTipoIng = document.getElementById('fTipoIngreso');
+      if (fTipoIng && !fTipoIng._ctxBound) {
+        fTipoIng._ctxBound = true;
+        fTipoIng.addEventListener('change', function() {
+          syncRegistroFieldsByTipoAndFuente();
+          if (typeof renderDropdowns === 'function') renderDropdowns();
+          if (typeof syncPersonaOptionsForCategory === 'function') syncPersonaOptionsForCategory();
+          if (typeof updateLiveFormPreview === 'function') updateLiveFormPreview();
+        });
+      }
+      setTimeout(syncRegistroFieldsByTipoAndFuente, 60);
+    })();
+
+    // =========================================================================
+    // BOLSILLOS DE AHORRO FILTRADOS POR TITULAR (PRESUPUESTO / PERSONA)
+    // =========================================================================
+    function getSavingsPocketsForOwner(ownerVal) {
+      const allCats = (typeof getUserSavingsCategories === 'function') ? getUserSavingsCategories() : (state.savingsConfig && state.savingsConfig.savingsCategories ? state.savingsConfig.savingsCategories : []);
+      const ownersMap = (state.savingsConfig && state.savingsConfig.savingsPocketOwners && typeof state.savingsConfig.savingsPocketOwners === 'object')
+        ? state.savingsConfig.savingsPocketOwners
+        : {};
+      const wantShared = isSharedSavingsOwner(ownerVal);
+      const wantName = String(ownerVal || 'Presupuesto').trim();
+      return allCats.filter(function(catName) {
+        const assigned = ownersMap[catName] || 'Presupuesto';
+        if (wantShared) return isSharedSavingsOwner(assigned);
+        return String(assigned).trim() === wantName;
+      });
+    }
+
+    function syncSavingsPocketSelectsByOwner() {
+      // 1. Selector de bolsillo en la sección Ahorros (#savFormCategorySelect según #savFormPersona)
+      const savPerEl = document.getElementById('savFormPersona');
+      const savCatEl = document.getElementById('savFormCategorySelect');
+      if (savPerEl && savCatEl) {
+        const owner = savPerEl.value || 'Presupuesto';
+        const pockets = getSavingsPocketsForOwner(owner);
+        const prev = savCatEl.value;
+        if (pockets.length > 0) {
+          savCatEl.innerHTML = pockets.map(function(c) {
+            return '<option value="' + escapeHtml(c) + '">🏦 ' + escapeHtml(c) + '</option>';
+          }).join('');
+          if (pockets.indexOf(prev) !== -1) savCatEl.value = prev;
+        } else {
+          const lbl = isSharedSavingsOwner(owner) ? 'Compartido' : owner;
+          savCatEl.innerHTML = '<option value="Ahorro ' + escapeHtml(lbl) + '">🏦 Ahorro ' + escapeHtml(lbl) + ' (crea un bolsillo arriba)</option>';
+        }
+      }
+
+      // 2. Selector de bolsillo en la sección Registro (#fCategoria cuando Tipo === 'Ahorro', según #fPersona)
+      const tipo = document.getElementById('fTipoMov') ? document.getElementById('fTipoMov').value : 'Gasto';
+      if (tipo === 'Ahorro') {
+        const regPerEl = document.getElementById('fPersona');
+        const regCatEl = document.getElementById('fCategoria');
+        if (regPerEl && regCatEl) {
+          const owner = regPerEl.value || 'Presupuesto';
+          const pockets = getSavingsPocketsForOwner(owner);
+          const prev = regCatEl.value;
+          if (pockets.length > 0) {
+            regCatEl.innerHTML = pockets.map(function(c) {
+              return '<option value="' + escapeHtml(c) + '">🏦 ' + escapeHtml(c) + '</option>';
+            }).join('');
+            if (pockets.indexOf(prev) !== -1) regCatEl.value = prev;
+          } else {
+            const lbl = isSharedSavingsOwner(owner) ? 'Compartido' : owner;
+            regCatEl.innerHTML = '<option value="Ahorro ' + escapeHtml(lbl) + '">🏦 Ahorro ' + escapeHtml(lbl) + ' (crea uno en Ahorros)</option>';
+          }
+        }
+      }
+    }
+
+    (function bindSavingsPocketOwnerSync() {
+      const savPerEl = document.getElementById('savFormPersona');
+      if (savPerEl && !savPerEl._pocketBound) {
+        savPerEl._pocketBound = true;
+        savPerEl.addEventListener('change', syncSavingsPocketSelectsByOwner);
+      }
+      const regPerEl = document.getElementById('fPersona');
+      if (regPerEl && !regPerEl._pocketBound) {
+        regPerEl._pocketBound = true;
+        regPerEl.addEventListener('change', syncSavingsPocketSelectsByOwner);
+      }
+      setTimeout(syncSavingsPocketSelectsByOwner, 100);
     })();
   </script>
   <button type="button" id="btnExitForceMobileFloat" title="Volver a la vista completa de Ordenador (PC)" class="hidden fixed top-4 right-4 z-[9998] items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#0A2558] hover:bg-[#133878] active:scale-95 text-white text-xs font-bold shadow-xl border border-white/20 transition"><span>💻</span> <span>Vista PC</span></button>
