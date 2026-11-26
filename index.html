@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.3.2" />
+  <meta name="app-build" content="2.3.3" />
   <meta name="app-notes" content="Mejoras en la experiencia del usuario y corrección de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -809,6 +809,37 @@
       body:not(.force-mobile-view) #homeQuickAccessSection { display: none !important; }
       body:not(.force-mobile-view) #homePcDashboardGrid { display: block !important; }
       body:not(.force-mobile-view) #homeLastMovSection { display: none !important; }
+      /* Tablas de Presupuesto y Flujo de Caja en PC: los 12 meses visibles sin desplazamiento horizontal */
+      body:not(.force-mobile-view) #budgetMatrixScrollWrapper,
+      body:not(.force-mobile-view) #cashFlowMatrixScrollWrapper {
+        overflow-x: visible !important;
+      }
+      body:not(.force-mobile-view) #budgetMatrixScrollWrapper table,
+      body:not(.force-mobile-view) #cashFlowMatrixScrollWrapper table {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: fixed !important;
+        font-size: 11px !important;
+        font-variant-numeric: tabular-nums;
+      }
+      body:not(.force-mobile-view) #budgetMatrixScrollWrapper th,
+      body:not(.force-mobile-view) #budgetMatrixScrollWrapper td,
+      body:not(.force-mobile-view) #cashFlowMatrixScrollWrapper th,
+      body:not(.force-mobile-view) #cashFlowMatrixScrollWrapper td {
+        padding: 0.45rem 0.25rem !important;
+        letter-spacing: -0.015em;
+      }
+      body:not(.force-mobile-view) #budgetMatrixScrollWrapper th:first-child,
+      body:not(.force-mobile-view) #budgetMatrixScrollWrapper td:first-child,
+      body:not(.force-mobile-view) #cashFlowMatrixScrollWrapper th:first-child,
+      body:not(.force-mobile-view) #cashFlowMatrixScrollWrapper td:first-child {
+        width: 14.5% !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.35rem !important;
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       /* Inicio en modo PC: misma estructura alineada, solo compresión vertical para ver todo sin desplazarse */
       body:not(.force-mobile-view).on-home-tab main {
         padding-top: 0.65rem !important;
@@ -3704,7 +3735,7 @@
           { id: 'gf', nombre: 'Gastos Fijos', pct: 30, mode: 'VARIABLE', fixedAmount: 400000, inCashFlowEgreso: false, isCore: true, icon: '🏠' },
           { id: 'sup', nombre: 'Supermercado', pct: 30, mode: 'VARIABLE', fixedAmount: 400000, inCashFlowEgreso: false, isCore: true, icon: '🛒' },
           { id: 'ahorro', nombre: 'Ahorro', pct: 20, mode: 'VARIABLE', fixedAmount: 300000, inCashFlowEgreso: false, isCore: true, icon: '🏦' },
-          { id: 'personal', nombre: 'Pago de Gastos Personales', pct: 20, mode: 'VARIABLE', fixedAmount: 300000, inCashFlowEgreso: true, isCore: true, icon: '🤝' }
+          { id: 'personal', nombre: 'Pago G. Pers.', pct: 20, mode: 'VARIABLE', fixedAmount: 300000, inCashFlowEgreso: true, isCore: true, icon: '🤝' }
         ],
         personalDistMode: 'VARIABLE', // 'VARIABLE' (% del cupo) | 'FIXED' ($ fijo por persona)
         personalDistShare: {}
@@ -3781,7 +3812,7 @@
         { id: 'gf', nombre: 'Gastos Fijos', pct: 30, mode: 'VARIABLE', fixedAmount: 400000, inCashFlowEgreso: false, isCore: true, icon: '🏠' },
         { id: 'sup', nombre: 'Supermercado', pct: 30, mode: 'VARIABLE', fixedAmount: 400000, inCashFlowEgreso: false, isCore: true, icon: '🛒' },
         { id: 'ahorro', nombre: 'Ahorro', pct: 20, mode: 'VARIABLE', fixedAmount: 300000, inCashFlowEgreso: false, isCore: true, icon: '🏦' },
-        { id: 'personal', nombre: 'Pago de Gastos Personales', pct: 20, mode: 'VARIABLE', fixedAmount: 300000, inCashFlowEgreso: true, isCore: true, icon: '🤝' }
+        { id: 'personal', nombre: 'Pago G. Pers.', pct: 20, mode: 'VARIABLE', fixedAmount: 300000, inCashFlowEgreso: true, isCore: true, icon: '🤝' }
       ];
     }
 
@@ -7129,7 +7160,7 @@
         : allCols;
 
       const thead = document.getElementById('budgetMatrixHead');
-      thead.innerHTML = '<tr><th class="p-2.5 text-left whitespace-nowrap">Concepto / Mes de Compra (' + activeY + ')</th>' +
+      thead.innerHTML = '<tr><th class="p-2.5 text-left whitespace-nowrap">Concepto (' + activeY + ')</th>' +
         cols.map(function(c) {
           const isActCol = (c.k === state.selectedMonth);
           const thCls = isActCol
@@ -7141,10 +7172,10 @@
 
       const expG = state._expandedMatrixGroups || {};
       const rowsDef = [
-        { title: 'Gastos Fijos — Diferencia', field: 'diff_gf', bold: true, bg: 'bg-slate-50 row-bg-slate-50', groupKey: 'bm_gf' },
+        { title: 'Gastos Fijos', field: 'diff_gf', bold: true, bg: 'bg-slate-50 row-bg-slate-50', groupKey: 'bm_gf' },
         { title: '↳ Gastos Fijos — Consumo', field: 'gf', bold: false, parentGroup: 'bm_gf' },
         { title: '↳ Gastos Fijos — Presupuesto', field: 'pres_gf', bold: false, parentGroup: 'bm_gf' },
-        { title: 'Supermercado — Diferencia', field: 'diff_sup', bold: true, bg: 'bg-slate-50 row-bg-slate-50', groupKey: 'bm_sup' },
+        { title: 'Supermercado', field: 'diff_sup', bold: true, bg: 'bg-slate-50 row-bg-slate-50', groupKey: 'bm_sup' },
         { title: '↳ Supermercado — Consumo', field: 'sup', bold: false, parentGroup: 'bm_sup' },
         { title: '↳ Supermercado — Presupuesto', field: 'pres_sup', bold: false, parentGroup: 'bm_sup' },
         { title: 'Gasto Puntual', field: 'puntual', invert: true, bold: false },
@@ -7933,7 +7964,7 @@
       const egPuntual = Number(b.puntual || 0);
       const egComprasPersonales = Number(b.personal_gasto_total || 0);
 
-      // Calcular categorías de la distribución de sueldo que están marcadas con "Va en Flujo de Caja (Egreso)" (como Pago de Gastos Personales)
+      // Calcular categorías de la distribución de sueldo que están marcadas con "Va en Flujo de Caja (Egreso)" (como Pago G. Pers.)
       const distItems = (state.savingsConfig && Array.isArray(state.savingsConfig.salaryDistItems))
         ? state.savingsConfig.salaryDistItems
         : getDefaultSalaryDistItems();
@@ -8029,7 +8060,7 @@
       const cfHeadEl = document.getElementById('cashFlowMatrixHead');
       const cfBodyEl = document.getElementById('cashFlowMatrixBody');
       if (cfHeadEl && cfBodyEl) {
-        cfHeadEl.innerHTML = '<tr><th class="p-2.5 text-left whitespace-nowrap">Flujo de Caja Mensual (' + activeY + ')</th>' +
+        cfHeadEl.innerHTML = '<tr><th class="p-2.5 text-left whitespace-nowrap">Flujo de Caja (' + activeY + ')</th>' +
           cfCols.map(function(c) {
             const isAct = (c.k === curM);
             const cls = isAct
@@ -8048,8 +8079,8 @@
           const goesToCF = (typeof item.inCashFlowEgreso !== 'undefined') ? Boolean(item.inCashFlowEgreso) : (item.id === 'personal');
           if (goesToCF) {
             const rowTitle = item.id === 'personal'
-              ? '🤝 (-) Pago de Gastos Personales (Distribución de Sueldo)'
-              : ((item.icon || '📌') + ' (-) ' + item.nombre + ' (Distribución de Sueldo)');
+              ? '🤝 (-) Pago G. Pers.'
+              : ((item.icon || '📌') + ' (-) ' + item.nombre + '');
             distEgresoRows.push({
               title: rowTitle,
               distId: item.id,
@@ -8064,19 +8095,19 @@
           return Object.assign({}, dr, { parentGroup: 'cf_egr' });
         });
         const cfRowsDef = [
-          { title: '➕ TOTAL INGRESOS DEL MES', field: 'totalIngresos', bold: true, bg: 'bg-emerald-50/70 row-bg-emerald-50', groupKey: 'cf_ing' },
-          { title: '💼 (+) Sueldo Mensual', field: 'sueldoMes', bold: false, parentGroup: 'cf_ing' },
-          { title: '✨ (+) Cashback y Reembolsos', field: 'cashbackYReemb', bold: false, parentGroup: 'cf_ing' },
-          { title: '🔄 (+) Devolución Compras Personales', field: 'devPersonales', bold: false, parentGroup: 'cf_ing' },
-          { title: '➖ TOTAL EGRESOS DEL MES', field: 'totalEgresos', invert: true, bold: true, bg: 'bg-rose-50/70 row-bg-rose-50', groupKey: 'cf_egr' },
-          { title: '🏠 (-) Gastos Fijos — Consumo Real', field: 'egGf', invert: true, bold: false, parentGroup: 'cf_egr' },
-          { title: '🛒 (-) Supermercado — Consumo Real', field: 'egSup', invert: true, bold: false, parentGroup: 'cf_egr' },
-          { title: '🎯 (-) Gasto Puntual', field: 'egPuntual', invert: true, bold: false, parentGroup: 'cf_egr' }
+          { title: '➕ Ingresos', field: 'totalIngresos', bold: true, bg: 'bg-emerald-50/70 row-bg-emerald-50', groupKey: 'cf_ing' },
+          { title: '💼 Sueldo', field: 'sueldoMes', bold: false, parentGroup: 'cf_ing' },
+          { title: '✨ Cashback/Reemb.', field: 'cashbackYReemb', bold: false, parentGroup: 'cf_ing' },
+          { title: '🔄 Devoluciones', field: 'devPersonales', bold: false, parentGroup: 'cf_ing' },
+          { title: '➖ Egresos', field: 'totalEgresos', invert: true, bold: true, bg: 'bg-rose-50/70 row-bg-rose-50', groupKey: 'cf_egr' },
+          { title: '🏠 Gastos Fijos', field: 'egGf', invert: true, bold: false, parentGroup: 'cf_egr' },
+          { title: '🛒 Supermercado', field: 'egSup', invert: true, bold: false, parentGroup: 'cf_egr' },
+          { title: '🎯 Gasto Puntual', field: 'egPuntual', invert: true, bold: false, parentGroup: 'cf_egr' }
         ].concat(distChildRows).concat([
-          { title: '🛍️ (-) Compras Personales', field: 'egComprasPersonales', invert: true, bold: false, parentGroup: 'cf_egr' },
-          { title: '🏦 Ahorro Transferido a Bolsillos', field: 'ahorroEnBolsillos', bold: true, bg: 'bg-sky-50/70 row-bg-sky-50' },
+          { title: '🛍️ Compras Pers.', field: 'egComprasPersonales', invert: true, bold: false, parentGroup: 'cf_egr' },
+          { title: '🏦 Ahorros', field: 'ahorroEnBolsillos', bold: true, bg: 'bg-sky-50/70 row-bg-sky-50' },
           { title: '💵 Saldo Neto', field: 'excedenteCajaSinApartar', bold: true, bg: 'bg-teal-100/80 row-bg-teal-100' },
-          { title: '📈 Saldo Acumulado', field: 'saldoAcumulado', bold: true, bg: 'bg-indigo-50/90' }
+          { title: '📈 Acumulado', field: 'saldoAcumulado', bold: true, bg: 'bg-indigo-50/90' }
         ]);
 
         cfBodyEl.innerHTML = cfRowsDef.filter(function(r) {
@@ -8251,7 +8282,7 @@
       if (distTbody) {
         distTbody.innerHTML = distItems.map(function(item, idx) {
           if (item.id === 'personal' && item.nombre === 'Gasto Personal') {
-            item.nombre = 'Pago de Gastos Personales';
+            item.nombre = 'Pago G. Pers.';
           }
           const itemMode = (item.mode === 'FIXED') ? 'FIXED' : 'VARIABLE';
           const pct = Number(item.pct || 0);
