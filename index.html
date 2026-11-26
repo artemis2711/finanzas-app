@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Finanzas Personales — App Móvil</title>
   <meta name="theme-color" content="#0A2558" />
-  <meta name="app-build" content="2.4.0" />
-  <meta name="app-notes" content="Autoregistro con opcion de lectura asistida por IA via Supabase y mejoras de interfaz." />
+  <meta name="app-build" content="2.4.2" />
+  <meta name="app-notes" content="Mejoras en la experiencia del usuario y correccion de errores menores." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
@@ -1626,14 +1626,19 @@
             <h2 class="text-base md:text-lg font-bold text-slate-900">Importar Estado de Cuenta (PDF / CSV / Excel) o Captura del Día</h2>
             <p class="text-xs text-slate-600">Analiza automáticamente cartolas de <strong>Lider BCI, Tenpo y Mercado Pago / Mach</strong>: detecta <strong>cargos, cuotas, reembolsos, duplicados contra tu registro manual, transferencias internas</strong> (tú decides si subirlas) y <strong>sugiere comercios por coincidencia de monto</strong>.</p>
           </div>
-          <label for="impAiToggle" class="inline-flex items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer select-none shrink-0 hover:bg-slate-100 transition">
-            <span class="text-xs font-bold text-slate-800">Lectura con IA</span>
-            <span class="relative inline-flex items-center">
-              <input type="checkbox" id="impAiToggle" class="sr-only peer" />
-              <span class="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-[#1B365D] transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span>
-            </span>
-            <span id="impAiToggleState" class="text-[11px] font-semibold text-slate-500 min-w-[46px]">Inactivo</span>
-          </label>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <label for="impAiToggle" class="inline-flex items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer select-none hover:bg-slate-100 transition">
+              <span class="text-xs font-bold text-slate-800">Lectura con IA</span>
+              <span class="relative inline-flex items-center">
+                <input type="checkbox" id="impAiToggle" class="sr-only peer" />
+                <span class="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-[#1B365D] transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span>
+              </span>
+              <span id="impAiToggleState" class="text-[11px] font-semibold text-slate-500 min-w-[46px]">Inactivo</span>
+            </label>
+            <button type="button" id="btnClearAllAutoregistro" class="px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 text-xs font-bold text-slate-700 transition">
+              Limpiar todo
+            </button>
+          </div>
         </div>
 
         <div id="grid-tab-importar" class="subsec-grid-container space-y-4 lg:space-y-0">
@@ -13655,6 +13660,33 @@
             updateAiImportToggleUI();
           });
         }
+        const clearAllBtn = document.getElementById('btnClearAllAutoregistro');
+        if (clearAllBtn) {
+          clearAllBtn.addEventListener('click', function() {
+            const fileIn = document.getElementById('impFileInput');
+            const imgIn = document.getElementById('impImageInput');
+            if (fileIn) fileIn.value = '';
+            if (imgIn) imgIn.value = '';
+            const imgPrev = document.getElementById('uploadedImgPreview');
+            if (imgPrev) imgPrev.removeAttribute('src');
+            const prevPanel = document.getElementById('imagePreviewPanel');
+            if (prevPanel) prevPanel.classList.add('hidden');
+            const pasteEl = document.getElementById('ocrPasteTextarea');
+            if (pasteEl) pasteEl.value = '';
+            const badge = document.getElementById('ocrStatusBadge');
+            if (badge) badge.textContent = 'Listo';
+            state.reviewItems = [];
+            state.pinnedSelectedReviewIdxs = null;
+            state.userManuallySelectedImpCard = false;
+            const revCont = document.getElementById('reviewTableContainer');
+            if (revCont) revCont.classList.add('hidden');
+            const revBody = document.getElementById('reviewTableBody');
+            if (revBody) revBody.innerHTML = '';
+            const singleCard = document.getElementById('reviewSingleCardView');
+            if (singleCard) singleCard.innerHTML = '';
+            showToast('Capturas, PDFs y tabla de autoregistro limpiados.', '🗑️');
+          });
+        }
       })();
 
       function compressImageDataUrlForAi(dataUrl, maxDim) {
@@ -13705,14 +13737,22 @@
         if (typeof window.__sbGetAuthContext !== 'function') {
           return { used: false, reason: 'Sin modulo de cuenta en la nube.' };
         }
-        const auth = await window.__sbGetAuthContext();
+        let auth = null;
+        try {
+          auth = await window.__sbGetAuthContext();
+        } catch (_e) {
+          auth = null;
+        }
         if (!auth || !auth.token || !auth.url || !auth.apikey) {
           showToast('Inicia sesion en Cuenta en la Nube para usar Lectura con IA. Usando lectura local.', 'ℹ️');
           return { used: false, reason: 'Sin sesion activa.' };
         }
+        const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = ctrl ? setTimeout(function() { try { ctrl.abort(); } catch (_e) {} }, 25000) : null;
         try {
           const resp = await fetch(auth.url + '/functions/v1/parse-movements', {
             method: 'POST',
+            signal: ctrl ? ctrl.signal : undefined,
             headers: {
               'Authorization': 'Bearer ' + auth.token,
               'apikey': auth.apikey,
@@ -13735,9 +13775,12 @@
           }
           return { used: true, items: data.items, tarjeta_detectada: data.tarjeta_detectada || '' };
         } catch (err) {
+          const msg = (err && err.name === 'AbortError') ? 'tiempo de espera agotado' : (err && err.message ? err.message : 'error de red');
           console.warn('Lectura con IA no disponible, usando motor local:', err);
-          showToast('Lectura con IA no disponible (' + (err && err.message ? err.message : 'error de red') + '). Usando lectura local.', '⚠️');
-          return { used: false, error: err };
+          showToast('Lectura con IA no disponible (' + msg + '). Usando lectura local.', '⚠️');
+          return { used: false, error: msg };
+        } finally {
+          if (timer) clearTimeout(timer);
         }
       }
 
@@ -13867,39 +13910,42 @@
         reader.onload = async function(evt) {
           document.getElementById('uploadedImgPreview').src = evt.target.result;
           document.getElementById('imagePreviewPanel').classList.remove('hidden');
-
-          if (isAiImportEnabled()) {
-            const badge = document.getElementById('ocrStatusBadge');
-            if (badge) badge.textContent = 'Analizando imagen con IA...';
-            const compressed = await compressImageDataUrlForAi(evt.target.result, 1600);
-            const aiRes = await tryParseWithSupabaseAi({
-              mimeType: compressed.mimeType,
-              base64: compressed.base64,
-              fileName: file.name,
-              selectedCard: tarjeta
-            });
-            if (aiRes && aiRes.used) {
-              if (aiRes.tarjeta_detectada && !state.userManuallySelectedImpCard) {
-                const matchedCard = (state.cards || []).find(function(c) {
-                  return c.nombre_tarjeta.toLowerCase() === String(aiRes.tarjeta_detectada).trim().toLowerCase();
-                });
-                if (matchedCard) {
-                  tarjeta = matchedCard.nombre_tarjeta;
-                  applyDetectedCardToImportUI(tarjeta);
+          try {
+            if (isAiImportEnabled()) {
+              const badge = document.getElementById('ocrStatusBadge');
+              if (badge) badge.textContent = 'Analizando imagen con IA...';
+              const compressed = await compressImageDataUrlForAi(evt.target.result, 1600);
+              const aiRes = await tryParseWithSupabaseAi({
+                mimeType: compressed.mimeType,
+                base64: compressed.base64,
+                fileName: file.name,
+                selectedCard: tarjeta
+              });
+              if (aiRes && aiRes.used) {
+                if (aiRes.tarjeta_detectada && !state.userManuallySelectedImpCard) {
+                  const matchedCard = (state.cards || []).find(function(c) {
+                    return c.nombre_tarjeta.toLowerCase() === String(aiRes.tarjeta_detectada).trim().toLowerCase();
+                  });
+                  if (matchedCard) {
+                    tarjeta = matchedCard.nombre_tarjeta;
+                    applyDetectedCardToImportUI(tarjeta);
+                  }
                 }
+                const activeCardAi = document.getElementById('impTarjetaSelect').value || tarjeta;
+                const pasteEl = document.getElementById('ocrPasteTextarea');
+                if (pasteEl) {
+                  pasteEl.value = aiRes.items.map(function(it) {
+                    return [it.fecha || '', it.detalle || '', '$' + (it.monto || 0), (it.cuotas_totales > 1 ? ('Cuota ' + (it.cuota_actual || 1) + '/' + it.cuotas_totales) : '')].filter(Boolean).join(' | ');
+                  }).join('\n');
+                }
+                if (badge) badge.textContent = 'Lectura con IA completada (' + aiRes.items.length + ')';
+                processRawImportedRows(aiRes.items, activeCardAi);
+                showToast('Imagen analizada con IA para ' + activeCardAi + ' (' + aiRes.items.length + ' movimientos extraidos).', '📸');
+                return;
               }
-              const activeCardAi = document.getElementById('impTarjetaSelect').value || tarjeta;
-              const pasteEl = document.getElementById('ocrPasteTextarea');
-              if (pasteEl) {
-                pasteEl.value = aiRes.items.map(function(it) {
-                  return [it.fecha || '', it.detalle || '', '$' + (it.monto || 0), (it.cuotas_totales > 1 ? ('Cuota ' + (it.cuota_actual || 1) + '/' + it.cuotas_totales) : '')].filter(Boolean).join(' | ');
-                }).join('\n');
-              }
-              if (badge) badge.textContent = 'Lectura con IA completada';
-              processRawImportedRows(aiRes.items, activeCardAi);
-              showToast('Imagen analizada con IA para ' + activeCardAi + ' (' + aiRes.items.length + ' movimientos extraidos).', '📸');
-              return;
             }
+          } catch (aiBlockErr) {
+            console.warn('Error inesperado en lectura con IA, pasando a OCR local:', aiBlockErr);
           }
 
           if (typeof Tesseract !== 'undefined') {
